@@ -19,7 +19,7 @@ export function useAdmin() {
     }
 
     // Set the token in the API client
-    (api as any).setAuthToken(token);
+    api.setAuthToken(token);
 
     const { data, error } = await api.get<User>('/api/auth/me');
     if (error || !data) {
@@ -40,7 +40,7 @@ export function useAdmin() {
     }
 
     localStorage.setItem('auth_token', data.token);
-    (api as any).setAuthToken(data.token);
+    api.setAuthToken(data.token);
     setUser(data.user);
     setIsAdmin(data.user.role === 'admin');
   };
@@ -52,14 +52,14 @@ export function useAdmin() {
     }
 
     localStorage.setItem('auth_token', data.token);
-    (api as any).setAuthToken(data.token);
+    api.setAuthToken(data.token);
     setUser(data.user);
     setIsAdmin(data.user.role === 'admin');
   };
 
   const logout = () => {
     localStorage.removeItem('auth_token');
-    (api as any).setAuthToken(null);
+    api.setAuthToken(null);
     setUser(null);
     setIsAdmin(false);
   };

@@ -33,7 +33,7 @@ I build, write, and think out loud. </>`;
       if (b.data) setBlogs(b.data);
       setThought(t);
     })();
-  }, []);
+  }, [fullText]);
 
   useEffect(() => {
     if (displayedText.length < fullText.length) {
@@ -42,7 +42,7 @@ I build, write, and think out loud. </>`;
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [displayedText]);
+  }, [displayedText, fullText]);
 
   const handleSubscribe = async () => {
     if (!email) {

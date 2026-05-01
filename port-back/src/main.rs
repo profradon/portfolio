@@ -9,7 +9,7 @@ use axum::{
     Router,
 };
 use tower_http::cors::CorsLayer;
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr};
 
 #[tokio::main]
 async fn main() {
@@ -55,7 +55,9 @@ async fn main() {
         .with_state(db);
 
     // Run the server
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let port = env::var("PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(3000);
+    let addr = SocketAddr::new(host.parse().expect("Invalid HOST"), port);
     println!("Server running on http://{}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
