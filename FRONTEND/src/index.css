@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark modern with mono accents */
+    --background: 220 14% 6%;
+    --foreground: 210 20% 96%;
+
+    --card: 220 14% 8%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 220 14% 8%;
+    --popover-foreground: 210 20% 96%;
+
+    --primary: 160 84% 60%;
+    --primary-foreground: 220 14% 6%;
+
+    --secondary: 220 12% 14%;
+    --secondary-foreground: 210 20% 96%;
+
+    --muted: 220 12% 12%;
+    --muted-foreground: 215 14% 60%;
+
+    --accent: 160 84% 60%;
+    --accent-foreground: 220 14% 6%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 210 20% 96%;
+
+    --border: 220 12% 16%;
+    --input: 220 12% 14%;
+    --ring: 160 84% 60%;
+
+    --radius: 0.375rem;
+
+    --gradient-glow: radial-gradient(ellipse at top, hsl(160 84% 60% / 0.18), transparent 60%);
+    --gradient-text: linear-gradient(135deg, hsl(210 20% 96%), hsl(160 84% 70%));
+    --shadow-glow: 0 0 40px -10px hsl(160 84% 60% / 0.4);
+    --shadow-card: 0 1px 0 0 hsl(220 12% 18%) inset, 0 8px 24px -8px hsl(0 0% 0% / 0.5);
+
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-serif: 'Playfair Display', Georgia, serif;
+
+    --sidebar-background: 220 14% 6%;
+    --sidebar-foreground: 210 20% 96%;
+    --sidebar-primary: 160 84% 60%;
+    --sidebar-primary-foreground: 220 14% 6%;
+    --sidebar-accent: 220 12% 12%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 220 12% 16%;
+    --sidebar-ring: 160 84% 60%;
+  }
+
+  .dark {
+    --background: 220 14% 6%;
+    --foreground: 210 20% 96%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    background-image: var(--gradient-glow);
+    background-attachment: fixed;
+  }
+  ::selection { @apply bg-primary/30 text-foreground; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { @apply bg-background; }
+  ::-webkit-scrollbar-thumb { @apply bg-secondary rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted; }
+}
+
+@layer utilities {
+  .font-mono { font-family: var(--font-mono); }
+  .font-serif { font-family: var(--font-serif); }
+  .font-grotesk { font-family: 'Space Grotesk', sans-serif; }
+  .font-lora { font-family: 'Lora', serif; }
+
+  .text-gradient {
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-shadow { box-shadow: var(--shadow-glow); }
+  .card-shadow { box-shadow: var(--shadow-card); }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(hsl(220 12% 14% / 0.4) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(220 12% 14% / 0.4) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+}
+
+/* Tiptap content styling */
+.tiptap-content {
+  @apply text-foreground/90 leading-relaxed;
+}
+.tiptap-content h1 { @apply text-3xl font-bold mt-8 mb-4 text-foreground; }
+.tiptap-content h2 { @apply text-2xl font-semibold mt-6 mb-3 text-foreground; }
+.tiptap-content h3 { @apply text-xl font-semibold mt-5 mb-2 text-foreground; }
+.tiptap-content p { @apply my-3; }
+.tiptap-content ul { @apply list-disc list-inside my-3 space-y-1; }
+.tiptap-content ol { @apply list-decimal list-inside my-3 space-y-1; }
+.tiptap-content blockquote { @apply border-l-2 border-primary pl-4 italic my-4 text-muted-foreground; }
+.tiptap-content code { @apply bg-secondary px-1.5 py-0.5 rounded text-sm font-mono text-primary; }
+.tiptap-content pre { @apply bg-secondary p-4 rounded-md my-4 overflow-x-auto; }
+.tiptap-content pre code { @apply bg-transparent p-0 text-foreground; }
+.tiptap-content a { @apply text-primary underline underline-offset-2 hover:opacity-80; }
+.tiptap-content img { @apply rounded-md my-4 max-w-full; }
+.tiptap-content strong { @apply font-semibold text-foreground; }
+.tiptap-content hr { @apply my-6 border-border; }
+
+.editor-shell .ProseMirror {
+  @apply min-h-[300px] outline-none;
+}
+.editor-shell .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply text-muted-foreground float-left h-0 pointer-events-none;
+}
