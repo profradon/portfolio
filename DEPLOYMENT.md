@@ -11,6 +11,8 @@ git commit -m "Portfolio ready for deployment"
 git push
 ```
 
+**Note**: The `vercel.json` file in your repo ensures Vercel builds correctly.
+
 ### Step 2: Create Vercel account and connect GitHub
 
 1. Go to [vercel.com](https://vercel.com)
@@ -85,13 +87,14 @@ git push
    - **Region**: Choose closest to you (e.g., `us-east-1`)
    - **Branch**: `main`
    - **Runtime**: Select **Rust**
+   - **Root Directory**: `port-back` (important!)
    - **Build Command**: 
      ```
-     cd port-back && cargo build --release
+     cargo build --release
      ```
    - **Start Command**: 
      ```
-     cd port-back && cargo run --release
+     cargo run --release
      ```
 
 3. Click **Advanced** and configure:
@@ -229,6 +232,27 @@ You should get JSON response (empty array if no data yet).
 **Solution**: 
 - Use **Render Cron Job** to ping your backend every 10 mins, or
 - Upgrade to **Paid Plan** ($7/month) for always-on service
+
+### MIME type errors on Vercel
+
+**Problem**: "Expected a JavaScript module script but server responded with MIME type of application/octet-stream"
+
+**Fix**:
+1. Check that `vercel.json` is committed to your repo
+2. Ensure Vercel is building from the correct directory (should auto-detect Vite)
+3. If still failing, manually set build settings in Vercel:
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+
+### Render detecting wrong runtime
+
+**Problem**: Render tries to run Node.js commands instead of Rust
+
+**Fix**:
+1. In Render service settings, ensure **Root Directory** is set to `port-back`
+2. **Runtime** should be **Rust**
+3. If still detecting as Node.js, delete and recreate the service with correct settings
 
 ---
 

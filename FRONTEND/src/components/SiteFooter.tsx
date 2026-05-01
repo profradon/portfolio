@@ -1,4 +1,4 @@
-import { Github, Mail, Phone } from "lucide-react";
+import { Github, Mail, Phone, MessageCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 export function SiteFooter() {
@@ -21,6 +21,9 @@ export function SiteFooter() {
           </a>
           <a className="flex items-center gap-1.5 transition-colors hover:text-primary" href="tel:+2349118932656">
             <Phone className="h-4 w-4" /> 09118932656
+          </a>
+          <a className="flex items-center gap-1.5 transition-colors hover:text-primary" href="https://wa.me/2349118932656" target="_blank" rel="noreferrer">
+            <MessageCircle className="h-4 w-4" /> WhatsApp
           </a>
         </div>
       </div>

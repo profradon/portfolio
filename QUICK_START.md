@@ -22,6 +22,7 @@
 
 3. Deploy Backend to Render
    └─ Connect GitHub repo
+   └─ **Important**: Set Root Directory to `port-back`
    └─ Set MONGODB_URI env var
    └─ Deploy → Get backend URL
 
