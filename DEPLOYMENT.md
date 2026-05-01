@@ -110,6 +110,8 @@ HOST=0.0.0.0
 PORT=3000
 ```
 
+For local development, create `port-back/.env` with the same values. This file is ignored by git and should not be committed.
+
 ### Step 5: How to get MongoDB connection string
 
 **Option A: MongoDB Atlas (Cloud) - Recommended**

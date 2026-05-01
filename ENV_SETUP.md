@@ -33,14 +33,18 @@ PORT=3000
 VITE_API_URL=http://localhost:3000
 ```
 
-### Backend (.env)
+### Backend (`port-back/.env`)
+
+Create this file locally at `port-back/.env`:
 
 ```
-MONGODB_URI=mongodb://localhost:27017
+MONGODB_URI=mongodb+srv://profradon-port:hassanportfolio123@cluster0.znj0m0c.mongodb.net/?appName=Cluster0
 DATABASE_NAME=portfolio
 HOST=0.0.0.0
 PORT=3000
 ```
+
+> Do not commit `port-back/.env` to git. It is ignored by `.gitignore`.
 
 ---
 
