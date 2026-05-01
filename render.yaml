@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: port-back
+    runtime: image
+    repo: https://github.com/profradon/portfolio
+    plan: free
+    rootDir: port-back
+    dockerfilePath: ./port-back/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: RUST_LOG
+        value: info
