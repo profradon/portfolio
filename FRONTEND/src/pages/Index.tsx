@@ -75,15 +75,12 @@ I build, write, and think out loud. </>`;
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-6 animate-fade-up">
             <img
-              src="https://placehold.co/120x120?text=Your+Photo"
-              alt="Profile placeholder"
+              src="/profile.jpg"
+              alt="Profile photo"
               className="h-28 w-28 rounded-full border border-border object-cover"
             />
             <div className="max-w-2xl">
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">Profile photo</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Replace this image with your own photo. Put your image in <code>FRONTEND/public/profile.jpg</code> and update <code>src</code> to <code>/profile.jpg</code>.
-              </p>
             </div>
           </div>
           <div className="mt-8 flex flex-wrap gap-3 animate-fade-up">
