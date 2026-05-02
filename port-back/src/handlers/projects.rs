@@ -38,6 +38,8 @@ pub async fn get_projects(
             "description": 1,
             "long_description": 1,
             "technologies": 1,
+            "project_types": 1,
+            "languages": 1,
             "github_url": 1,
             "live_url": 1,
             "image_url": 1,
@@ -86,6 +88,8 @@ pub async fn get_admin_projects(
             "description": 1,
             "long_description": 1,
             "technologies": 1,
+            "project_types": 1,
+            "languages": 1,
             "github_url": 1,
             "live_url": 1,
             "image_url": 1,
@@ -251,7 +255,8 @@ pub async fn update_project(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(projects.into_iter().next().unwrap()))
+    let project = projects.into_iter().next().ok_or(StatusCode::NOT_FOUND)?;
+    Ok(Json(project))
 }
 
 pub async fn delete_project(

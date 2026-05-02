@@ -109,7 +109,7 @@ I build, write, and think out loud. </>`;
             "Axum", "Tokio", "Express", "Next.js",
             "MongoDB", "PostgreSQL", "SQLx", "Sled DB",
             "Docker", "AWS", "Google Cloud", "TLS",
-            "GraphQL", "REST API", "Tailwind CSS", "Material UI",
+             "REST API", "Tailwind CSS", "Material UI",
             "C++", "Python", "Webpack", "Git",
             "Async I/O", "TCP/IP", "DashMap", "Cryptography",
             "Actix-web", "JavaScript", "MySQL"
