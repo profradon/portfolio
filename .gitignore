@@ -1,5 +1,8 @@
 node_modules
 
+dist
+FRONTEND/dist
+
 # Local environment files
 .env
 env
