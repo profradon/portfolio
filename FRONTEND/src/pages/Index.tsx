@@ -97,6 +97,30 @@ I build, write, and think out loud. </>`;
         </div>
       </section>
 
+      {/* Tech Stack */}
+      <section className="container py-12 sm:py-16">
+        <div className="mb-8">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">// Stack</p>
+          <h2 className="mt-3 font-grotesk text-2xl sm:text-3xl md:text-4xl font-bold">Technologies & tools</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            "Rust", "TypeScript", "React", "Node.js",
+            "Axum", "Tokio", "Express", "Next.js",
+            "MongoDB", "PostgreSQL", "SQLx", "Sled DB",
+            "Docker", "AWS", "Google Cloud", "TLS",
+            "GraphQL", "REST API", "Tailwind CSS", "Material UI",
+            "C++", "Python", "Webpack", "Git",
+            "Async I/O", "TCP/IP", "DashMap", "Cryptography",
+            "Actix-web", "JavaScript", "MySQL"
+          ].map((tech) => (
+            <div key={tech} className="rounded-lg border border-border bg-card p-3 sm:p-4 card-shadow transition-all hover:border-primary/40 hover:-translate-y-0.5">
+              <p className="font-mono text-xs sm:text-sm font-semibold text-foreground">{tech}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Latest thought */}
       {thought && (
         <section className="container py-12">
@@ -118,19 +142,37 @@ I build, write, and think out loud. </>`;
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.length === 0 && <p className="text-muted-foreground">No projects yet — add some from the admin panel.</p>}
           {projects.map((p) => (
-            <article key={p.id} className="group rounded-lg border border-border bg-card p-6 card-shadow transition-all hover:-translate-y-1 hover:border-primary/40">
-              <h3 className="font-grotesk text-xl font-semibold">{p.title}</h3>
-              <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{p.description}</p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {p.tags?.slice(0, 4).map((t) => (
-                  <span key={t} className="rounded-full bg-secondary px-2 py-0.5 font-mono text-xs text-muted-foreground">{t}</span>
-                ))}
-              </div>
-              {p.url && (
-                <a href={p.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 text-sm text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                  Visit <ArrowRight className="h-3 w-3" />
-                </a>
+            <article key={p.id} className="group rounded-lg border border-border bg-card overflow-hidden card-shadow transition-all hover:-translate-y-1 hover:border-primary/40">
+              {p.image_url && (
+                <img
+                  src={p.image_url}
+                  alt={p.title}
+                  className="aspect-video w-full object-cover"
+                />
               )}
+              <div className="p-6">
+                <h3 className="font-grotesk text-xl font-semibold">{p.title}</h3>
+                <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{p.description}</p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {p.technologies?.slice(0, 3).map((t) => (
+                    <span key={t} className="rounded-full bg-secondary px-2 py-0.5 font-mono text-xs text-muted-foreground">{t}</span>
+                  ))}
+                </div>
+                {(p.live_url || p.github_url) && (
+                  <div className="mt-4 flex gap-3">
+                    {p.live_url && (
+                      <a href={p.live_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline underline-offset-2">
+                        Live →
+                      </a>
+                    )}
+                    {p.github_url && (
+                      <a href={p.github_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline underline-offset-2">
+                        GitHub →
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
             </article>
           ))}
         </div>

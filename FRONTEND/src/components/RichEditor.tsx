@@ -32,7 +32,7 @@ interface Props {
 export function RichEditor({ value, onChange, placeholder = "Start writing…", minHeight = 240 }: Props) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ underline: false }),
       Underline,
       TextStyle,
       FontFamily.configure({ types: ["textStyle"] }),
