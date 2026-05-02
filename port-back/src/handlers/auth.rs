@@ -74,7 +74,18 @@ pub async fn signup(
 
     let collection = db.collection::<User>("users");
 
-    // Check if user already exists
+    // Check if any admin user already exists - only allow one-time signup
+    let admin_filter = doc! { "role": "admin" };
+    let existing_admin = collection
+        .find_one(admin_filter)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if existing_admin.is_some() {
+        return Err(StatusCode::FORBIDDEN); // Admin already exists, signup disabled
+    }
+
+    // Check if user already exists (shouldn't happen but safety check)
     let filter = doc! { "email": &request.email };
     if collection
         .find_one(filter)
