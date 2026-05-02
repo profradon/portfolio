@@ -35,7 +35,12 @@ class ApiClient {
       });
 
       if (!response.ok) {
-        return { error: `HTTP ${response.status}: ${response.statusText}` };
+        const contentType = response.headers.get("content-type") || "";
+        const bodyText = await response.text();
+        const errorMessage = bodyText
+          ? `HTTP ${response.status}: ${bodyText}`
+          : `HTTP ${response.status}: ${response.statusText}`;
+        return { error: errorMessage };
       }
 
       const data = await response.json();

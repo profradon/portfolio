@@ -135,10 +135,15 @@ pub async fn create_project(
         updated_at: now,
     };
 
-    let result = collection.insert_one(&project).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let result = collection.insert_one(&project).await.map_err(|err| {
+        eprintln!("Failed to insert project: {:?}", err);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
-    let id = result.inserted_id.as_object_id().unwrap().to_hex();
+    let id = match result.inserted_id {
+        bson::Bson::ObjectId(oid) => oid.to_hex(),
+        other => other.to_string(),
+    };
 
     let response = ProjectResponse {
         id,
