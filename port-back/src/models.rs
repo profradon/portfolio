@@ -1,5 +1,13 @@
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+
+fn null_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Default + DeserializeOwned,
+{
+    Ok(Option::deserialize(deserializer)?.unwrap_or_default())
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Blog {
@@ -24,11 +32,11 @@ pub struct Project {
     pub title: String,
     pub description: String,
     pub long_description: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub technologies: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub project_types: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub languages: Vec<String>,
     pub github_url: Option<String>,
     pub live_url: Option<String>,
@@ -113,11 +121,11 @@ pub struct ProjectResponse {
     pub title: String,
     pub description: String,
     pub long_description: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub technologies: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub project_types: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub languages: Vec<String>,
     pub github_url: Option<String>,
     pub live_url: Option<String>,
@@ -187,11 +195,11 @@ pub struct CreateProjectRequest {
     pub title: String,
     pub description: String,
     pub long_description: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub technologies: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub project_types: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub languages: Vec<String>,
     pub github_url: Option<String>,
     pub live_url: Option<String>,
