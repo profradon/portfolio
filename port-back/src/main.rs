@@ -4,11 +4,12 @@ mod auth;
 mod database;
 
 use axum::{
+    http::Method,
     middleware,
-    routing::{get, post, put, delete},
+    routing::{delete, get, post, put},
     Router,
 };
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
 use std::{env, net::SocketAddr};
 
 #[tokio::main]
@@ -51,7 +52,18 @@ async fn main() {
         .route("/api/admin/about", put(handlers::about::update_about))
         .route("/api/auth/me", get(handlers::auth::me).layer(middleware::from_fn(auth::auth_middleware)))
 
-        .layer(CorsLayer::permissive())
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([
+                    Method::GET,
+                    Method::POST,
+                    Method::PUT,
+                    Method::DELETE,
+                    Method::OPTIONS,
+                ])
+                .allow_headers(Any),
+        )
         .with_state(db);
 
     // Run the server
