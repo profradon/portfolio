@@ -115,13 +115,13 @@ pub struct ProjectResponse {
     pub long_description: Option<String>,
 
     #[serde(default)]
-    pub technologies: Option<Vec<String>>,
+    pub technologies: Vec<String>,
 
     #[serde(default)]
-    pub project_types: Option<Vec<String>>,
+    pub project_types: Vec<String>,
 
     #[serde(default)]
-    pub languages: Option<Vec<String>>,
+    pub languages: Vec<String>,
 
     pub github_url: Option<String>,
     pub live_url: Option<String>,

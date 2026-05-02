@@ -22,14 +22,13 @@ pub struct PaginationQuery {
 // ---------------- HELPERS ----------------
 
 fn parse_doc(doc: bson::Document) -> Result<ProjectResponse, StatusCode> {
-    bson::from_document::<ProjectResponse>(doc)
-        .map_err(|e| {
-            println!("❌ DESERIALIZATION ERROR: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })
+    bson::from_document::<ProjectResponse>(doc).map_err(|e| {
+        println!("❌ DESERIALIZATION ERROR: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })
 }
 
-// ---------------- PUBLIC ----------------
+// ---------------- GET PROJECTS ----------------
 
 pub async fn get_projects(
     State(db): State<Database>,
@@ -83,7 +82,7 @@ pub async fn get_projects(
     Ok(Json(projects))
 }
 
-// ---------------- ADMIN ----------------
+// ---------------- ADMIN (same as public) ----------------
 
 pub async fn get_admin_projects(
     State(db): State<Database>,
@@ -158,19 +157,39 @@ pub async fn update_project(
     let object_id = ObjectId::parse_str(&id).map_err(|_| StatusCode::BAD_REQUEST)?;
 
     let mut update_doc = doc! {
-        "updated_at": BsonDateTime::from_chrono(Utc::now())
+        "updated_at": BsonDateTime::now()
     };
 
-    if let Some(v) = request.title { update_doc.insert("title", v); }
-    if let Some(v) = request.description { update_doc.insert("description", v); }
-    if let Some(v) = request.long_description { update_doc.insert("long_description", v); }
-    if let Some(v) = request.technologies { update_doc.insert("technologies", v); }
-    if let Some(v) = request.project_types { update_doc.insert("project_types", v); }
-    if let Some(v) = request.languages { update_doc.insert("languages", v); }
-    if let Some(v) = request.github_url { update_doc.insert("github_url", v); }
-    if let Some(v) = request.live_url { update_doc.insert("live_url", v); }
-    if let Some(v) = request.image_url { update_doc.insert("image_url", v); }
-    if let Some(v) = request.featured { update_doc.insert("featured", v); }
+    if let Some(v) = request.title {
+        update_doc.insert("title", v);
+    }
+    if let Some(v) = request.description {
+        update_doc.insert("description", v);
+    }
+    if let Some(v) = request.long_description {
+        update_doc.insert("long_description", v);
+    }
+    if let Some(v) = request.technologies {
+        update_doc.insert("technologies", v);
+    }
+    if let Some(v) = request.project_types {
+        update_doc.insert("project_types", v);
+    }
+    if let Some(v) = request.languages {
+        update_doc.insert("languages", v);
+    }
+    if let Some(v) = request.github_url {
+        update_doc.insert("github_url", v);
+    }
+    if let Some(v) = request.live_url {
+        update_doc.insert("live_url", v);
+    }
+    if let Some(v) = request.image_url {
+        update_doc.insert("image_url", v);
+    }
+    if let Some(v) = request.featured {
+        update_doc.insert("featured", v);
+    }
 
     let result = collection
         .update_one(doc! { "_id": object_id }, doc! { "$set": update_doc })
@@ -184,7 +203,6 @@ pub async fn update_project(
         return Err(StatusCode::NOT_FOUND);
     }
 
-    // fetch updated
     let doc = collection
         .aggregate(vec![
             doc! { "$match": { "_id": object_id } },
@@ -212,9 +230,7 @@ pub async fn update_project(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let project = doc.into_iter().next().ok_or(StatusCode::NOT_FOUND)?;
-    let response = parse_doc(project)?;
-
-    Ok(Json(response))
+    Ok(Json(parse_doc(project)?))
 }
 
 // ---------------- DELETE ----------------
