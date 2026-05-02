@@ -1,5 +1,5 @@
 // API client for communicating with the Rust backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://portfolio-backend.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://portfolio-backend-wlvy.onrender.com';
 
 export interface ApiResponse<T> {
   data?: T;
