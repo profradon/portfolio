@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Loader2, Eye } from "lucide-react";
 import { slugify } from "@/lib/slug";
@@ -23,6 +23,7 @@ export default function AdminBlogs() {
   const [form, setForm] = useState(empty);
   const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [coverPreview, setCoverPreview] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -31,10 +32,11 @@ export default function AdminBlogs() {
   };
   useEffect(() => { load(); }, []);
 
-  const startNew = () => { setEditing(null); setForm(empty); setSlugTouched(false); setOpen(true); };
+  const startNew = () => { setEditing(null); setForm(empty); setSlugTouched(false); setCoverPreview(""); setOpen(true); };
   const startEdit = (b: Blog) => {
     setEditing(b); setSlugTouched(true);
     setForm({ slug: b.slug, title: b.title, excerpt: b.excerpt, content: b.content, cover_url: b.cover_url || "", published: b.published });
+    setCoverPreview(b.cover_url || "");
     setOpen(true);
   };
 
@@ -92,12 +94,39 @@ export default function AdminBlogs() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Edit post" : "New post"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit post" : "New post"}</DialogTitle>
+            <DialogDescription>Choose a cover image or upload one from your computer, then save the post.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div><Label>Title</Label><Input value={form.title} onChange={(e) => onTitle(e.target.value)} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Slug</Label><Input value={form.slug} onChange={(e) => { setSlugTouched(true); setForm({ ...form, slug: e.target.value }); }} /></div>
-              <div><Label>Cover image URL</Label><Input value={form.cover_url} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></div>
+              <div>
+                <Label>Cover image URL</Label>
+                <Input value={form.cover_url} onChange={(e) => { setForm({ ...form, cover_url: e.target.value }); setCoverPreview(e.target.value); }} />
+              </div>
+            </div>
+            <div>
+              <Label>Or upload cover image</Label>
+              <input
+                type="file"
+                accept="image/*"
+                className="rounded border border-border bg-background px-3 py-2"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    if (typeof reader.result === "string") {
+                      setForm({ ...form, cover_url: reader.result });
+                      setCoverPreview(reader.result);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+              {coverPreview && <img src={coverPreview} alt="Cover preview" className="mt-3 h-40 w-full rounded-md object-cover" />}
             </div>
             <div><Label>Excerpt</Label><Textarea rows={2} value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} /></div>
             <div>

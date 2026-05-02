@@ -24,8 +24,11 @@ pub struct Project {
     pub title: String,
     pub description: String,
     pub long_description: Option<String>,
+    #[serde(default)]
     pub technologies: Vec<String>,
+    #[serde(default)]
     pub project_types: Vec<String>,
+    #[serde(default)]
     pub languages: Vec<String>,
     pub github_url: Option<String>,
     pub live_url: Option<String>,
@@ -110,8 +113,11 @@ pub struct ProjectResponse {
     pub title: String,
     pub description: String,
     pub long_description: Option<String>,
+    #[serde(default)]
     pub technologies: Vec<String>,
+    #[serde(default)]
     pub project_types: Vec<String>,
+    #[serde(default)]
     pub languages: Vec<String>,
     pub github_url: Option<String>,
     pub live_url: Option<String>,
@@ -181,12 +187,16 @@ pub struct CreateProjectRequest {
     pub title: String,
     pub description: String,
     pub long_description: Option<String>,
+    #[serde(default)]
     pub technologies: Vec<String>,
+    #[serde(default)]
     pub project_types: Vec<String>,
+    #[serde(default)]
     pub languages: Vec<String>,
     pub github_url: Option<String>,
     pub live_url: Option<String>,
     pub image_url: Option<String>,
+    #[serde(default)]
     pub featured: bool,
 }
 
@@ -213,6 +223,7 @@ pub struct CreateBookRequest {
     pub cover_url: Option<String>,
     pub rating: Option<f32>,
     pub review: Option<String>,
+    #[serde(default)]
     pub tags: Vec<String>,
 }
 

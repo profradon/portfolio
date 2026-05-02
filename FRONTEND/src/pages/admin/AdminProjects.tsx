@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import type { Project } from "@/integrations/types";
@@ -22,16 +22,18 @@ export default function AdminProjects() {
   const [editing, setEditing] = useState<Project | null>(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [imagePreview, setImagePreview] = useState("");
 
   const load = async () => {
     setLoading(true);
-    const { data } = await api.get<Project[]>("/api/admin/projects");
+    const { data } = await api.get<Project[]>('/api/admin/projects');
     setItems(data || []);
     setLoading(false);
   };
+
   useEffect(() => { load(); }, []);
 
-  const startNew = () => { setEditing(null); setForm(empty); setOpen(true); };
+  const startNew = () => { setEditing(null); setForm(empty); setImagePreview(""); setOpen(true); };
   const startEdit = (p: Project) => {
     setEditing(p);
     setForm({
@@ -46,6 +48,7 @@ export default function AdminProjects() {
       languages: p.languages?.join(", ") || "",
       featured: p.featured,
     });
+    setImagePreview(p.image_url || "");
     setOpen(true);
   };
 
@@ -112,7 +115,12 @@ export default function AdminProjects() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Edit project" : "New project"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit project" : "New project"}</DialogTitle>
+            <DialogDescription>
+              Add a project with its type, languages, and an optional image. Select from the available filters to keep results consistent.
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
             <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
@@ -121,10 +129,63 @@ export default function AdminProjects() {
               <div><Label>GitHub URL</Label><Input placeholder="https://…" value={form.github_url} onChange={(e) => setForm({ ...form, github_url: e.target.value })} /></div>
               <div><Label>Live URL</Label><Input placeholder="https://…" value={form.live_url} onChange={(e) => setForm({ ...form, live_url: e.target.value })} /></div>
             </div>
-            <div><Label>Image URL</Label><Input placeholder="https://…" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
-            <div><Label>Technologies (comma separated)</Label><Input placeholder="React, Express, TypeScript..." value={form.technologies} onChange={(e) => setForm({ ...form, technologies: e.target.value })} /></div>
-            <div><Label>Project Types (comma separated)</Label><Input placeholder="Web Development, Open Source..." value={form.project_types} onChange={(e) => setForm({ ...form, project_types: e.target.value })} /></div>
-            <div><Label>Languages (comma separated)</Label><Input placeholder="JavaScript, Rust, Python..." value={form.languages} onChange={(e) => setForm({ ...form, languages: e.target.value })} /></div>
+            <div>
+              <Label>Image</Label>
+              <div className="flex flex-col gap-2">
+                <Input placeholder="https://…" value={form.image_url} onChange={(e) => { setForm({ ...form, image_url: e.target.value }); setImagePreview(e.target.value); }} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="rounded border border-border bg-background px-3 py-2"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      if (typeof reader.result === "string") {
+                        setImagePreview(reader.result);
+                        setForm({ ...form, image_url: reader.result });
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                {imagePreview && (
+                  <img src={imagePreview} alt="Project preview" className="h-40 w-full rounded-md object-cover" />
+                )}
+              </div>
+            </div>
+            <div><Label>Technologies</Label><Input placeholder="React, Express, TypeScript..." value={form.technologies} onChange={(e) => setForm({ ...form, technologies: e.target.value })} /></div>
+            <div>
+              <Label>Project Types</Label>
+              <select
+                multiple
+                value={form.project_types.split(",").map((value) => value.trim()).filter(Boolean)}
+                onChange={(e) => setForm({ ...form, project_types: Array.from(e.target.selectedOptions).map((option) => option.value).join(", ") })}
+                className="w-full rounded border border-border bg-background px-3 py-2"
+                size={Math.min(PROJECT_TYPES.length, 6)}
+              >
+                {PROJECT_TYPES.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">Hold Ctrl/Cmd to select multiple types.</p>
+            </div>
+            <div>
+              <Label>Languages</Label>
+              <select
+                multiple
+                value={form.languages.split(",").map((value) => value.trim()).filter(Boolean)}
+                onChange={(e) => setForm({ ...form, languages: Array.from(e.target.selectedOptions).map((option) => option.value).join(", ") })}
+                className="w-full rounded border border-border bg-background px-3 py-2"
+                size={Math.min(LANGUAGES.length, 6)}
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang} value={lang}>{lang}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">Hold Ctrl/Cmd to select multiple languages.</p>
+            </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" id="featured" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
               <Label htmlFor="featured">Featured</Label>

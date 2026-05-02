@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import type { Book } from "@/integrations/types";
@@ -18,6 +18,7 @@ export default function AdminBooks() {
   const [editing, setEditing] = useState<Book | null>(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [coverPreview, setCoverPreview] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -26,10 +27,11 @@ export default function AdminBooks() {
   };
   useEffect(() => { load(); }, []);
 
-  const startNew = () => { setEditing(null); setForm(empty); setOpen(true); };
+  const startNew = () => { setEditing(null); setForm(empty); setCoverPreview(""); setOpen(true); };
   const startEdit = (b: Book) => {
     setEditing(b);
     setForm({ title: b.title, author: b.author, notes: b.notes, cover_url: b.cover_url || "", link: b.link || "" });
+    setCoverPreview(b.cover_url || "");
     setOpen(true);
   };
 
@@ -78,11 +80,37 @@ export default function AdminBooks() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit book" : "New book"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit book" : "New book"}</DialogTitle>
+            <DialogDescription>Upload or paste a cover image URL, then save the book recommendation.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
             <div><Label>Author</Label><Input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} /></div>
-            <div><Label>Cover URL</Label><Input value={form.cover_url} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></div>
+            <div>
+              <Label>Cover image</Label>
+              <div className="space-y-2">
+                <Input value={form.cover_url} onChange={(e) => { setForm({ ...form, cover_url: e.target.value }); setCoverPreview(e.target.value); }} placeholder="https://..." />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="rounded border border-border bg-background px-3 py-2"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      if (typeof reader.result === "string") {
+                        setForm({ ...form, cover_url: reader.result });
+                        setCoverPreview(reader.result);
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                {coverPreview && <img src={coverPreview} alt="Cover preview" className="h-40 w-full rounded-md object-cover" />}
+              </div>
+            </div>
             <div><Label>Link</Label><Input value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} /></div>
             <div><Label>Notes</Label><Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
           </div>
