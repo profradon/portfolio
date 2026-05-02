@@ -6,11 +6,15 @@ mod database;
 use axum::{
     http::Method,
     middleware,
-    routing::{delete, get, post, put},
+    routing::{delete, get, options, post, put},
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
 use std::{env, net::SocketAddr};
+
+async fn preflight() -> axum::http::StatusCode {
+    axum::http::StatusCode::NO_CONTENT
+}
 
 #[tokio::main]
 async fn main() {
@@ -51,6 +55,7 @@ async fn main() {
         .route("/api/admin/about", get(handlers::about::get_admin_about))
         .route("/api/admin/about", put(handlers::about::update_about))
         .route("/api/auth/me", get(handlers::auth::me).layer(middleware::from_fn(auth::auth_middleware)))
+        .route("/api/*path", options(preflight))
 
         .layer(
             CorsLayer::new()
