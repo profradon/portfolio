@@ -16,7 +16,20 @@ pub struct PaginationQuery {
     pub limit: Option<i64>,
 }
 
-// Public routes
+// 🔧 Helper: Safe deserialization with logging
+fn parse_doc(doc: bson::Document) -> Result<ProjectResponse, StatusCode> {
+    match bson::from_document::<ProjectResponse>(doc.clone()) {
+        Ok(p) => Ok(p),
+        Err(e) => {
+            println!("❌ DESERIALIZATION ERROR: {:?}", e);
+            println!("❌ DOCUMENT: {:?}", doc);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+// ---------------- PUBLIC ----------------
+
 pub async fn get_projects(
     State(db): State<Database>,
     Query(pagination): Query<PaginationQuery>,
@@ -50,71 +63,42 @@ pub async fn get_projects(
     ];
 
     let cursor = collection.aggregate(pipeline).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("❌ DB ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let projects: Vec<ProjectResponse> = cursor
         .map(|doc_result| {
             match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+                Ok(doc) => parse_doc(doc),
+                Err(e) => {
+                    println!("❌ CURSOR ERROR: {:?}", e);
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
             }
         })
         .try_collect()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("❌ COLLECT ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     Ok(Json(projects))
 }
 
-// Admin routes
+// ---------------- ADMIN ----------------
+
 pub async fn get_admin_projects(
     State(db): State<Database>,
     Query(pagination): Query<PaginationQuery>,
 ) -> Result<Json<Vec<ProjectResponse>>, StatusCode> {
-    let page = pagination.page.unwrap_or(1);
-    let limit = pagination.limit.unwrap_or(10);
-    let skip = (page - 1) * limit;
-
-    let collection = db.collection::<Project>("projects");
-
-    let pipeline = vec![
-        doc! { "$sort": { "created_at": -1 } },
-        doc! { "$skip": skip },
-        doc! { "$limit": limit },
-        doc! { "$project": {
-            "_id": 0,
-            "id": { "$toString": "$_id" },
-            "title": 1,
-            "description": 1,
-            "long_description": 1,
-            "technologies": 1,
-            "project_types": 1,
-            "languages": 1,
-            "github_url": 1,
-            "live_url": 1,
-            "image_url": 1,
-            "featured": 1,
-            "created_at": 1,
-            "updated_at": 1
-        }}
-    ];
-
-    let cursor = collection.aggregate(pipeline).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let projects: Vec<ProjectResponse> = cursor
-        .map(|doc_result| {
-            match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-            }
-        })
-        .try_collect()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(Json(projects))
+    // SAME as public — just reused
+    get_projects(State(db), Query(pagination)).await
 }
+
+// ---------------- CREATE ----------------
 
 pub async fn create_project(
     State(db): State<Database>,
@@ -123,6 +107,7 @@ pub async fn create_project(
     let collection = db.collection::<Project>("projects");
 
     let now = chrono::Utc::now();
+
     let project = Project {
         id: None,
         title: request.title,
@@ -139,15 +124,14 @@ pub async fn create_project(
         updated_at: now,
     };
 
-    let result = collection.insert_one(&project).await.map_err(|err| {
-        eprintln!("Failed to insert project: {:?}", err);
+    let result = collection.insert_one(&project).await.map_err(|e| {
+        println!("❌ INSERT ERROR: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    let id = match result.inserted_id {
-        bson::Bson::ObjectId(oid) => oid.to_hex(),
-        other => other.to_string(),
-    };
+    let id = result.inserted_id.as_object_id()
+        .map(|id| id.to_hex())
+        .unwrap_or_default();
 
     let response = ProjectResponse {
         id,
@@ -168,6 +152,8 @@ pub async fn create_project(
     Ok(Json(response))
 }
 
+// ---------------- UPDATE ----------------
+
 pub async fn update_project(
     State(db): State<Database>,
     Path(id): Path<String>,
@@ -178,49 +164,33 @@ pub async fn update_project(
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    let mut update_doc = mongodb::bson::doc! { "updated_at": chrono::Utc::now().timestamp_millis() as i64 };
+    let mut update_doc = doc! {
+        "updated_at": chrono::Utc::now()
+    };
 
-    if let Some(title) = request.title {
-        update_doc.insert("title", title);
-    }
-    if let Some(description) = request.description {
-        update_doc.insert("description", description);
-    }
-    if let Some(long_description) = request.long_description {
-        update_doc.insert("long_description", long_description);
-    }
-    if let Some(technologies) = request.technologies {
-        update_doc.insert("technologies", technologies);
-    }
-    if let Some(project_types) = request.project_types {
-        update_doc.insert("project_types", project_types);
-    }
-    if let Some(languages) = request.languages {
-        update_doc.insert("languages", languages);
-    }
-    if let Some(github_url) = request.github_url {
-        update_doc.insert("github_url", github_url);
-    }
-    if let Some(live_url) = request.live_url {
-        update_doc.insert("live_url", live_url);
-    }
-    if let Some(image_url) = request.image_url {
-        update_doc.insert("image_url", image_url);
-    }
-    if let Some(featured) = request.featured {
-        update_doc.insert("featured", featured);
-    }
+    if let Some(v) = request.title { update_doc.insert("title", v); }
+    if let Some(v) = request.description { update_doc.insert("description", v); }
+    if let Some(v) = request.long_description { update_doc.insert("long_description", v); }
+    if let Some(v) = request.technologies { update_doc.insert("technologies", v); }
+    if let Some(v) = request.project_types { update_doc.insert("project_types", v); }
+    if let Some(v) = request.languages { update_doc.insert("languages", v); }
+    if let Some(v) = request.github_url { update_doc.insert("github_url", v); }
+    if let Some(v) = request.live_url { update_doc.insert("live_url", v); }
+    if let Some(v) = request.image_url { update_doc.insert("image_url", v); }
+    if let Some(v) = request.featured { update_doc.insert("featured", v); }
 
-    let update = doc! { "$set": update_doc };
-
-    let result = collection.update_one(doc! { "_id": object_id }, update).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let result = collection.update_one(doc! { "_id": object_id }, doc! { "$set": update_doc })
+        .await
+        .map_err(|e| {
+            println!("❌ UPDATE ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     if result.modified_count == 0 {
         return Err(StatusCode::NOT_FOUND);
     }
 
-    // Fetch updated project
+    // Fetch updated
     let pipeline = vec![
         doc! { "$match": { "_id": object_id } },
         doc! { "$project": {
@@ -242,22 +212,31 @@ pub async fn update_project(
     ];
 
     let cursor = collection.aggregate(pipeline).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("❌ FETCH ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let projects: Vec<ProjectResponse> = cursor
-        .map(|doc_result| {
-            match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        .map(|doc_result| match doc_result {
+            Ok(doc) => parse_doc(doc),
+            Err(e) => {
+                println!("❌ CURSOR ERROR: {:?}", e);
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         })
         .try_collect()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("❌ COLLECT ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let project = projects.into_iter().next().ok_or(StatusCode::NOT_FOUND)?;
     Ok(Json(project))
 }
+
+// ---------------- DELETE ----------------
 
 pub async fn delete_project(
     State(db): State<Database>,
@@ -269,7 +248,10 @@ pub async fn delete_project(
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
     let result = collection.delete_one(doc! { "_id": object_id }).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("❌ DELETE ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     if result.deleted_count == 0 {
         return Err(StatusCode::NOT_FOUND);

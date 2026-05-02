@@ -124,9 +124,9 @@ pub struct ProjectResponse {
     #[serde(default, deserialize_with = "null_as_default")]
     pub technologies: Vec<String>,
     #[serde(default, deserialize_with = "null_as_default")]
-    pub project_types: Vec<String>,
+    pub project_types: Option<Vec<String>>
     #[serde(default, deserialize_with = "null_as_default")]
-    pub languages: Vec<String>,
+    pub languages: Option<Vec<String>>,
     pub github_url: Option<String>,
     pub live_url: Option<String>,
     pub image_url: Option<String>,
