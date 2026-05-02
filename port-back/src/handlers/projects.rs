@@ -9,7 +9,7 @@ use mongodb::{
     Database,
 };
 use serde::Deserialize;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 
 use crate::models::{Project, ProjectResponse, CreateProjectRequest, UpdateProjectRequest};
 
@@ -21,10 +21,60 @@ pub struct PaginationQuery {
 
 // ---------------- HELPERS ----------------
 
+fn bson_string(doc: &bson::Document, key: &str) -> Result<String, StatusCode> {
+    doc.get_str(key)
+        .map(|s| s.to_string())
+        .map_err(|e| {
+            println!("DESERIALIZATION ERROR: missing or invalid {}: {:?}", key, e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })
+}
+
+fn bson_optional_string(doc: &bson::Document, key: &str) -> Result<Option<String>, StatusCode> {
+    match doc.get(key) {
+        Some(bson::Bson::String(s)) => Ok(Some(s.clone())),
+        Some(bson::Bson::Null) | None => Ok(None),
+        Some(other) => {
+            println!("DESERIALIZATION ERROR: invalid {} type: {:?}", key, other);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+fn bson_string_array(doc: &bson::Document, key: &str) -> Result<Vec<String>, StatusCode> {
+    match doc.get_array(key) {
+        Ok(array) => Ok(array
+            .iter()
+            .filter_map(|item| item.as_str().map(|s| s.to_string()))
+            .collect()),
+        Err(_) => Ok(vec![]),
+    }
+}
+
+fn bson_datetime(doc: &bson::Document, key: &str) -> Result<chrono::DateTime<Utc>, StatusCode> {
+    doc.get_datetime(key)
+        .map(|dt| Utc.timestamp_millis_opt(dt.timestamp_millis()).single().unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap()))
+        .map_err(|e| {
+            println!("DESERIALIZATION ERROR: invalid {}: {:?}", key, e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })
+}
+
 fn parse_doc(doc: bson::Document) -> Result<ProjectResponse, StatusCode> {
-    bson::from_document::<ProjectResponse>(doc).map_err(|e| {
-        println!("❌ DESERIALIZATION ERROR: {:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
+    Ok(ProjectResponse {
+        id: bson_string(&doc, "id")?,
+        title: bson_string(&doc, "title")?,
+        description: bson_string(&doc, "description")?,
+        long_description: bson_optional_string(&doc, "long_description")?,
+        technologies: bson_string_array(&doc, "technologies")?,
+        project_types: bson_string_array(&doc, "project_types")?,
+        languages: bson_string_array(&doc, "languages")?,
+        github_url: bson_optional_string(&doc, "github_url")?,
+        live_url: bson_optional_string(&doc, "live_url")?,
+        image_url: bson_optional_string(&doc, "image_url")?,
+        featured: doc.get_bool("featured").unwrap_or(false),
+        created_at: bson_datetime(&doc, "created_at")?,
+        updated_at: bson_datetime(&doc, "updated_at")?,
     })
 }
 
@@ -63,7 +113,7 @@ pub async fn get_projects(
     ];
 
     let cursor = collection.aggregate(pipeline).await.map_err(|e| {
-        println!("❌ DB ERROR: {:?}", e);
+        println!(" DB ERROR: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
@@ -71,7 +121,7 @@ pub async fn get_projects(
         .map(|doc| match doc {
             Ok(d) => parse_doc(d),
             Err(e) => {
-                println!("❌ CURSOR ERROR: {:?}", e);
+                println!(" CURSOR ERROR: {:?}", e);
                 Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         })
@@ -118,7 +168,7 @@ pub async fn create_project(
     };
 
     let result = collection.insert_one(&project).await.map_err(|e| {
-        println!("❌ INSERT ERROR: {:?}", e);
+        println!("INSERT ERROR: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
@@ -195,7 +245,7 @@ pub async fn update_project(
         .update_one(doc! { "_id": object_id }, doc! { "$set": update_doc })
         .await
         .map_err(|e| {
-            println!("❌ UPDATE ERROR: {:?}", e);
+            println!(" UPDATE ERROR: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
@@ -247,7 +297,7 @@ pub async fn delete_project(
         .delete_one(doc! { "_id": object_id })
         .await
         .map_err(|e| {
-            println!("❌ DELETE ERROR: {:?}", e);
+            println!("DELETE ERROR: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 

@@ -25,7 +25,7 @@ export default function Books() {
               {b.cover_url ? (
                 <img src={b.cover_url} alt={b.title} className="h-28 w-20 shrink-0 rounded object-cover" loading="lazy" />
               ) : (
-                <div className="flex h-28 w-20 shrink-0 items-center justify-center rounded bg-secondary font-serif text-2xl text-muted-foreground">📖</div>
+                <div className="flex h-28 w-20 shrink-0 items-center justify-center rounded bg-secondary font-serif text-base text-muted-foreground">No cover</div>
               )}
               <div className="min-w-0">
                 <h2 className="font-serif text-lg leading-tight">{b.title}</h2>
