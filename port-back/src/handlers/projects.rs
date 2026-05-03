@@ -316,21 +316,37 @@ pub async fn delete_project(
     State(db): State<Database>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, StatusCode> {
-    let collection = db.collection::<Project>("projects");
+    println!("DEBUG: delete_project called with id: {}", id);
+    println!("DEBUG: ID length: {}, is valid hex: {}", id.len(), id.chars().all(|c| c.is_ascii_hexdigit()));
 
-    let object_id = ObjectId::parse_str(&id).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let collection = db.collection::<bson::Document>("projects");
+
+    let object_id = match ObjectId::parse_str(&id) {
+        Ok(oid) => {
+            println!("DEBUG: Successfully parsed ObjectId: {:?}", oid);
+            oid
+        },
+        Err(e) => {
+            println!("DEBUG: Failed to parse ObjectId '{}': {:?}", id, e);
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
 
     let result = collection
         .delete_one(doc! { "_id": object_id })
         .await
         .map_err(|e| {
-            println!("DELETE ERROR: {:?}", e);
+            println!("DEBUG: DELETE ERROR: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    println!("DEBUG: Delete result - deleted_count: {}", result.deleted_count);
+
     if result.deleted_count == 0 {
+        println!("DEBUG: No document found with id: {}", id);
         return Err(StatusCode::NOT_FOUND);
     }
 
+    println!("DEBUG: Successfully deleted project with id: {}", id);
     Ok(StatusCode::NO_CONTENT)
 }
