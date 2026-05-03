@@ -22,12 +22,13 @@ pub struct PaginationQuery {
 // ---------------- HELPERS ----------------
 
 fn bson_string(doc: &bson::Document, key: &str) -> Result<String, StatusCode> {
-    doc.get_str(key)
-        .map(|s| s.to_string())
-        .map_err(|e| {
-            println!("DESERIALIZATION ERROR: missing or invalid {}: {:?}", key, e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })
+    match doc.get_str(key) {
+        Ok(s) => Ok(s.to_string()),
+        Err(e) => {
+            println!("DESERIALIZATION ERROR: missing or invalid {}: {:?}, doc keys: {:?}", key, e, doc.keys().collect::<Vec<_>>());
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
 fn bson_optional_string(doc: &bson::Document, key: &str) -> Result<Option<String>, StatusCode> {
@@ -52,15 +53,28 @@ fn bson_string_array(doc: &bson::Document, key: &str) -> Result<Vec<String>, Sta
 }
 
 fn bson_datetime(doc: &bson::Document, key: &str) -> Result<chrono::DateTime<Utc>, StatusCode> {
-    doc.get_datetime(key)
-        .map(|dt| Utc.timestamp_millis_opt(dt.timestamp_millis()).single().unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap()))
-        .map_err(|e| {
-            println!("DESERIALIZATION ERROR: invalid {}: {:?}", key, e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })
+    match doc.get(key) {
+        Some(bson::Bson::DateTime(dt)) => {
+            Ok(Utc.timestamp_millis_opt(dt.timestamp_millis()).single().unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap()))
+        },
+        Some(bson::Bson::Int64(ts)) => {
+            // If it's stored as milliseconds timestamp
+            Ok(Utc.timestamp_millis_opt(*ts).single().unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap()))
+        },
+        Some(other) => {
+            println!("DESERIALIZATION ERROR: {} has unexpected type: {:?}", key, other);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        },
+        None => {
+            println!("DESERIALIZATION ERROR: missing {} field", key);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
 fn parse_doc(doc: bson::Document) -> Result<ProjectResponse, StatusCode> {
+    println!("DEBUG: parse_doc called with document: {:?}", doc);
+
     Ok(ProjectResponse {
         id: bson_string(&doc, "id")?,
         title: bson_string(&doc, "title")?,
@@ -84,11 +98,13 @@ pub async fn get_projects(
     State(db): State<Database>,
     Query(pagination): Query<PaginationQuery>,
 ) -> Result<Json<Vec<ProjectResponse>>, StatusCode> {
+    println!("DEBUG: get_projects called with pagination: page={:?}, limit={:?}", pagination.page, pagination.limit);
+
     let page = pagination.page.unwrap_or(1);
     let limit = pagination.limit.unwrap_or(10);
     let skip = (page - 1) * limit;
 
-    let collection = db.collection::<Project>("projects");
+    let collection = db.collection::<bson::Document>("projects");
 
     let pipeline = vec![
         doc! { "$sort": { "created_at": -1 } },
@@ -112,23 +128,34 @@ pub async fn get_projects(
         }}
     ];
 
+    println!("DEBUG: Aggregation pipeline: {:?}", pipeline);
+
     let cursor = collection.aggregate(pipeline).await.map_err(|e| {
-        println!(" DB ERROR: {:?}", e);
+        println!("DEBUG: DB AGGREGATE ERROR: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    let projects = cursor
+    println!("DEBUG: Got cursor, collecting results...");
+
+    let projects: Vec<ProjectResponse> = cursor
         .map(|doc| match doc {
-            Ok(d) => parse_doc(d),
+            Ok(d) => {
+                println!("DEBUG: Processing document: {:?}", d);
+                parse_doc(d)
+            },
             Err(e) => {
-                println!(" CURSOR ERROR: {:?}", e);
+                println!("DEBUG: CURSOR ERROR: {:?}", e);
                 Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         })
         .try_collect()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("DEBUG: TRY_COLLECT ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
+    println!("DEBUG: Successfully parsed {} projects", projects.len());
     Ok(Json(projects))
 }
 
