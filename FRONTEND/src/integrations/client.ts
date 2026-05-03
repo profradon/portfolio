@@ -43,6 +43,11 @@ class ApiClient {
         return { error: errorMessage };
       }
 
+      // Handle responses with no content (like 204 No Content)
+      if (response.status === 204 || response.headers.get("content-length") === "0") {
+        return { data: null as T };
+      }
+
       const data = await response.json();
       return { data };
     } catch (error) {

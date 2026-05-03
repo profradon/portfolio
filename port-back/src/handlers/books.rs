@@ -3,6 +3,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use chrono::{TimeZone, Utc};
 use futures::{StreamExt, TryStreamExt};
 use mongodb::bson::{self, doc, oid::ObjectId};
 use mongodb::Database;
@@ -16,6 +17,81 @@ pub struct PaginationQuery {
     pub limit: Option<i64>,
 }
 
+fn bson_string(doc: &bson::Document, key: &str) -> Result<String, StatusCode> {
+    match doc.get_str(key) {
+        Ok(s) => Ok(s.to_string()),
+        Err(e) => {
+            println!("BOOKS DESERIALIZATION ERROR: missing or invalid {}: {:?}", key, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+fn bson_optional_string(doc: &bson::Document, key: &str) -> Result<Option<String>, StatusCode> {
+    match doc.get(key) {
+        Some(bson::Bson::String(s)) => Ok(Some(s.clone())),
+        Some(bson::Bson::Null) | None => Ok(None),
+        Some(other) => {
+            println!("BOOKS DESERIALIZATION ERROR: invalid {} type: {:?}", key, other);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+fn bson_string_array(doc: &bson::Document, key: &str) -> Result<Vec<String>, StatusCode> {
+    match doc.get_array(key) {
+        Ok(array) => Ok(array
+            .iter()
+            .filter_map(|item| item.as_str().map(|s| s.to_string()))
+            .collect()),
+        Err(_) => Ok(vec![]),
+    }
+}
+
+fn bson_optional_f32(doc: &bson::Document, key: &str) -> Result<Option<f32>, StatusCode> {
+    match doc.get(key) {
+        Some(bson::Bson::Double(value)) => Ok(Some(*value as f32)),
+        Some(bson::Bson::Int32(value)) => Ok(Some(*value as f32)),
+        Some(bson::Bson::Int64(value)) => Ok(Some(*value as f32)),
+        Some(bson::Bson::Null) | None => Ok(None),
+        Some(other) => {
+            println!("BOOKS DESERIALIZATION ERROR: invalid {} type: {:?}", key, other);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+fn bson_datetime(doc: &bson::Document, key: &str) -> Result<chrono::DateTime<Utc>, StatusCode> {
+    match doc.get(key) {
+        Some(bson::Bson::DateTime(dt)) => Ok(Utc.timestamp_millis_opt(dt.timestamp_millis()).single().unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap())),
+        Some(bson::Bson::Int64(ts)) => Ok(Utc.timestamp_millis_opt(*ts).single().unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap())),
+        Some(other) => {
+            println!("BOOKS DESERIALIZATION ERROR: invalid {} type: {:?}", key, other);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+        None => {
+            println!("BOOKS DESERIALIZATION ERROR: missing {} field", key);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+fn parse_book_doc(doc: bson::Document) -> Result<BookResponse, StatusCode> {
+    Ok(BookResponse {
+        id: bson_string(&doc, "id")?,
+        title: bson_string(&doc, "title")?,
+        author: bson_string(&doc, "author")?,
+        description: bson_optional_string(&doc, "description")?,
+        isbn: bson_optional_string(&doc, "isbn")?,
+        cover_url: bson_optional_string(&doc, "cover_url")?,
+        rating: bson_optional_f32(&doc, "rating")?,
+        review: bson_optional_string(&doc, "review")?,
+        tags: bson_string_array(&doc, "tags")?,
+        created_at: bson_datetime(&doc, "created_at")?,
+        updated_at: bson_datetime(&doc, "updated_at")?,
+    })
+}
+
 // Public routes
 pub async fn get_books(
     State(db): State<Database>,
@@ -25,7 +101,7 @@ pub async fn get_books(
     let limit = pagination.limit.unwrap_or(10);
     let skip = (page - 1) * limit;
 
-    let collection = db.collection::<Book>("books");
+    let collection = db.collection::<bson::Document>("books");
 
     let pipeline = vec![
         doc! { "$sort": { "created_at": -1 } },
@@ -48,18 +124,25 @@ pub async fn get_books(
     ];
 
     let cursor = collection.aggregate(pipeline).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("BOOKS DB AGGREGATE ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let books: Vec<BookResponse> = cursor
-        .map(|doc_result| {
-            match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        .map(|doc_result| match doc_result {
+            Ok(doc) => parse_book_doc(doc),
+            Err(e) => {
+                println!("BOOKS CURSOR ERROR: {:?}", e);
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         })
         .try_collect()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("BOOKS TRY_COLLECT ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     Ok(Json(books))
 }
@@ -73,7 +156,7 @@ pub async fn get_admin_books(
     let limit = pagination.limit.unwrap_or(10);
     let skip = (page - 1) * limit;
 
-    let collection = db.collection::<Book>("books");
+    let collection = db.collection::<bson::Document>("books");
 
     let pipeline = vec![
         doc! { "$sort": { "created_at": -1 } },
@@ -96,18 +179,25 @@ pub async fn get_admin_books(
     ];
 
     let cursor = collection.aggregate(pipeline).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("BOOKS ADMIN DB AGGREGATE ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let books: Vec<BookResponse> = cursor
-        .map(|doc_result| {
-            match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        .map(|doc_result| match doc_result {
+            Ok(doc) => parse_book_doc(doc),
+            Err(e) => {
+                println!("BOOKS ADMIN CURSOR ERROR: {:?}", e);
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         })
         .try_collect()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("BOOKS ADMIN TRY_COLLECT ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     Ok(Json(books))
 }
@@ -221,18 +311,25 @@ pub async fn update_book(
     ];
 
     let cursor = collection.aggregate(pipeline).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("BOOKS UPDATE DB AGGREGATE ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let books: Vec<BookResponse> = cursor
-        .map(|doc_result| {
-            match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        .map(|doc_result| match doc_result {
+            Ok(doc) => parse_book_doc(doc),
+            Err(e) => {
+                println!("BOOKS UPDATE CURSOR ERROR: {:?}", e);
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         })
         .try_collect()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            println!("BOOKS UPDATE TRY_COLLECT ERROR: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     Ok(Json(books.into_iter().next().unwrap()))
 }
