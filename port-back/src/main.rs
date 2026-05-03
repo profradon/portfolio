@@ -19,11 +19,15 @@ async fn preflight() -> axum::http::StatusCode {
 #[tokio::main]
 async fn main() {
     env_logger::init();
+    println!("DEBUG: Starting server...");
 
     // Initialize database
+    println!("DEBUG: Initializing database...");
     let db = database::init().await.expect("Failed to initialize database");
+    println!("DEBUG: Database initialized successfully");
 
     // Build our application with routes
+    println!("DEBUG: Building application routes...");
     let app = Router::new()
         // Public routes
         .route("/api/blogs", get(handlers::blogs::get_blogs))
@@ -75,7 +79,10 @@ async fn main() {
     let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port = env::var("PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(3000);
     let addr = SocketAddr::new(host.parse().expect("Invalid HOST"), port);
-    println!("Server running on http://{}", addr);
+    println!("DEBUG: Starting server on http://{}", addr);
+    println!("DEBUG: JWT_SECRET is set: {}", env::var("JWT_SECRET").is_ok());
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    println!("DEBUG: Server bound to address, starting to serve...");
     axum::serve(listener, app).await.unwrap();
+    println!("DEBUG: Server stopped");
 }
