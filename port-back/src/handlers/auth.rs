@@ -4,26 +4,59 @@ use axum::{
     Json,
 };
 use bcrypt::{hash, verify};
-use mongodb::bson::doc;
+use mongodb::bson::{self, doc};
 use mongodb::Database;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 
 use crate::auth::{create_token, Claims};
-use crate::models::{LoginRequest, LoginResponse, User, UserResponse, SignupRequest};
+use crate::models::{LoginRequest, LoginResponse, UserResponse, SignupRequest};
+
+// Helper function to parse User from BSON document
+fn parse_user_doc(doc: bson::Document) -> Result<crate::models::User, StatusCode> {
+    let id = doc.get_object_id("_id")
+        .map(|oid| oid.to_hex())
+        .ok();
+
+    let email = doc.get_str("email")
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .to_string();
+
+    let password_hash = doc.get_str("password_hash")
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .to_string();
+
+    let role = doc.get_str("role")
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .to_string();
+
+    let created_at = doc.get_datetime("created_at")
+        .map(|dt| Utc.timestamp_millis_opt(dt.timestamp_millis()).single().unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap()))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(crate::models::User {
+        id,
+        email,
+        password_hash,
+        role,
+        created_at,
+    })
+}
 
 pub async fn login(
     State(db): State<Database>,
     Json(request): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, StatusCode> {
-    let collection = db.collection::<User>("users");
+    let collection = db.collection::<bson::Document>("users");
 
     // Find user by email
     let filter = doc! { "email": &request.email };
-    let user = collection
+    let doc = collection
         .find_one(filter)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    let user = parse_user_doc(doc)?;
 
     // Verify password
     let is_valid = verify(&request.password, &user.password_hash)
@@ -72,7 +105,7 @@ pub async fn signup(
         return Err(StatusCode::FORBIDDEN);
     }
 
-    let collection = db.collection::<User>("users");
+    let collection = db.collection::<bson::Document>("users");
 
     // Check if any admin user already exists - only allow one-time signup
     let admin_filter = doc! { "role": "admin" };
@@ -101,16 +134,16 @@ pub async fn signup(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // Create new user
-    let new_user = User {
-        id: None,
-        email: request.email,
-        password_hash: hashed_password,
-        role: "admin".to_string(),
-        created_at: Utc::now(),
+    let now = Utc::now();
+    let user_doc = doc! {
+        "email": &request.email,
+        "password_hash": &hashed_password,
+        "role": "admin",
+        "created_at": bson::DateTime::from_system_time(now.into())
     };
 
     let result = collection
-        .insert_one(&new_user)
+        .insert_one(user_doc)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
@@ -118,12 +151,12 @@ pub async fn signup(
         .map(|id| id.to_hex())
         .unwrap_or_default();
 
-    let user = User {
+    let user = crate::models::User {
         id: Some(user_id),
-        email: new_user.email,
-        password_hash: new_user.password_hash,
-        role: new_user.role,
-        created_at: new_user.created_at,
+        email: request.email,
+        password_hash: hashed_password,
+        role: "admin".to_string(),
+        created_at: now,
     };
 
     // Create JWT token
