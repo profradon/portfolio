@@ -104,12 +104,16 @@ pub async fn update_about(
     let collection = db.collection::<About>("about");
 
     // Try to find existing about document
-    let existing = collection.find_one(doc! {}).await
+    let existing_doc = collection.find_one(doc! {}).await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let now = chrono::Utc::now();
 
-    if let Some(existing_about) = existing {
+    if let Some(doc) = existing_doc {
+        // Extract ObjectId from document
+        let object_id = doc.get_object_id("_id")
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
         // Update existing document
         let mut update_doc = mongodb::bson::doc! { "updated_at": now.timestamp_millis() as i64 };
 
@@ -120,18 +124,17 @@ pub async fn update_about(
             update_doc.insert("content", content);
         }
 
-        let object_id = ObjectId::parse_str(existing_about.id.as_ref().unwrap())
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
         let update = doc! { "$set": update_doc };
 
         collection.update_one(doc! { "_id": object_id }, update).await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         let response = AboutResponse {
-            id: existing_about.id.clone().unwrap_or_default(),
-            title: request.title.or(existing_about.title),
-            content: request.content.unwrap_or(existing_about.content),
+            id: object_id.to_hex(),
+            title: request.title.clone(),
+            content: request.content.clone().unwrap_or_else(|| {
+                doc.get_str("content").unwrap_or("").to_string()
+            }),
             updated_at: now,
         };
 
