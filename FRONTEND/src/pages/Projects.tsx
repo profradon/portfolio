@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/integrations/client";
+import { RichText } from "@/components/RichText";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,13 @@ const FRAMEWORKS = [
   "FastAPI",
   "Vue.js",
 ];
+
+// Helper to strip HTML tags for preview
+const stripHtmlTags = (html: string): string => {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+};
 
 export default function Projects() {
   const [items, setItems] = useState<Project[]>([]);
@@ -197,7 +205,7 @@ export default function Projects() {
       </div>
 
       {/* Results */}
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-max">
         {filtered.length === 0 && <p className="text-muted-foreground">No projects found.</p>}
         {filtered.map((p) => (
           <article
@@ -228,15 +236,22 @@ export default function Projects() {
             {(() => {
               const projectDescription = p.long_description || p.description;
               const isExpanded = expandedProjects[p.id];
-              const shouldTruncate = projectDescription.length > 180;
+              const plainText = stripHtmlTags(projectDescription);
+              const shouldTruncate = plainText.length > 180;
 
               return (
                 <>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {shouldTruncate && !isExpanded
-                      ? `${projectDescription.slice(0, 180).trim()}...`
-                      : projectDescription}
-                  </p>
+                  {isExpanded && p.long_description ? (
+                    <div className="mt-2 text-sm text-muted-foreground prose-sm">
+                      <RichText html={p.long_description} className="tiptap-content" />
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {shouldTruncate && !isExpanded
+                        ? `${plainText.slice(0, 180).trim()}...`
+                        : plainText}
+                    </p>
+                  )}
                   {shouldTruncate && (
                     <button
                       type="button"
