@@ -3,98 +3,73 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use futures::{StreamExt, TryStreamExt};
-use mongodb::bson::{self, doc, oid::ObjectId};
+use chrono::TimeZone;
+use mongodb::bson::{self, doc, Bson};
 use mongodb::Database;
 
 use crate::models::{About, AboutResponse, UpdateAboutRequest};
+
+fn parse_about_document(doc: bson::Document) -> AboutResponse {
+    let id = match doc.get("_id") {
+        Some(Bson::ObjectId(oid)) => oid.to_hex(),
+        Some(Bson::String(s)) => s.clone(),
+        _ => "default".to_string(),
+    };
+
+    let title = doc.get_str("title").ok().map(|s| s.to_string());
+    let content = doc
+        .get_str("content")
+        .unwrap_or("Welcome to my personal website.")
+        .to_string();
+
+    let updated_at = match doc.get("updated_at") {
+        Some(Bson::DateTime(dt)) => chrono::Utc.timestamp_millis_opt((*dt).timestamp_millis()).single().unwrap_or_else(|| chrono::Utc::now()),
+        Some(Bson::Int64(ms)) => chrono::Utc.timestamp_millis_opt(*ms).single().unwrap_or_else(|| chrono::Utc::now()),
+        Some(Bson::Int32(ms)) => chrono::Utc.timestamp_millis_opt(i64::from(*ms)).single().unwrap_or_else(|| chrono::Utc::now()),
+        _ => chrono::Utc::now(),
+    };
+
+    AboutResponse {
+        id,
+        title,
+        content,
+        updated_at,
+    }
+}
+
+fn default_about() -> AboutResponse {
+    AboutResponse {
+        id: "default".to_string(),
+        title: Some("About".to_string()),
+        content: "Welcome to my personal website.".to_string(),
+        updated_at: chrono::Utc::now(),
+    }
+}
 
 // Public routes
 pub async fn get_about(
     State(db): State<Database>,
 ) -> Result<Json<AboutResponse>, StatusCode> {
-    let collection = db.collection::<About>("about");
+    let collection = db.collection::<bson::Document>("about");
 
-    let pipeline = vec![
-        doc! { "$project": {
-            "_id": 0,
-            "id": { "$toString": "$_id" },
-            "title": 1,
-            "content": 1,
-            "updated_at": 1
-        }}
-    ];
-
-    let cursor = collection.aggregate(pipeline).await
+    let document = collection.find_one(doc! {}).await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let abouts: Vec<AboutResponse> = cursor
-        .map(|doc_result| {
-            match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-            }
-        })
-        .try_collect()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    // If no about document exists, return a default one
-    if abouts.is_empty() {
-        let default_about = AboutResponse {
-            id: "default".to_string(),
-            title: Some("About".to_string()),
-            content: "Welcome to my personal website.".to_string(),
-            updated_at: chrono::Utc::now(),
-        };
-        return Ok(Json(default_about));
-    }
-
-    Ok(Json(abouts.into_iter().next().unwrap()))
+    let about = document.map(parse_about_document).unwrap_or_else(default_about);
+    Ok(Json(about))
 }
 
 // Admin routes
 pub async fn get_admin_about(
     State(db): State<Database>,
 ) -> Result<Json<AboutResponse>, StatusCode> {
-    let collection = db.collection::<About>("about");
+    let collection = db.collection::<bson::Document>("about");
 
-    let pipeline = vec![
-        doc! { "$project": {
-            "_id": 0,
-            "id": { "$toString": "$_id" },
-            "title": 1,
-            "content": 1,
-            "updated_at": 1
-        }}
-    ];
-
-    let cursor = collection.aggregate(pipeline).await
+    let document = collection.find_one(doc! {}).await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let abouts: Vec<AboutResponse> = cursor
-        .map(|doc_result| {
-            match doc_result {
-                Ok(doc) => bson::from_document(doc).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-            }
-        })
-        .try_collect()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    // If no about document exists, return a default one
-    if abouts.is_empty() {
-        let default_about = AboutResponse {
-            id: "default".to_string(),
-            title: Some("About".to_string()),
-            content: "Welcome to my personal website.".to_string(),
-            updated_at: chrono::Utc::now(),
-        };
-        return Ok(Json(default_about));
-    }
-
-    Ok(Json(abouts.into_iter().next().unwrap()))
+    let about = document.map(parse_about_document).unwrap_or_else(default_about);
+    Ok(Json(about))
 }
 
 pub async fn update_about(
@@ -103,18 +78,16 @@ pub async fn update_about(
 ) -> Result<Json<AboutResponse>, StatusCode> {
     let collection = db.collection::<bson::Document>("about");
 
-    // Try to find existing about document
     let existing_doc = collection.find_one(doc! {}).await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let now = chrono::Utc::now();
 
     if let Some(doc) = existing_doc {
-        // Extract ObjectId from document
-        let object_id = doc.get_object_id("_id")
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let id_value = doc.get("_id")
+            .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?
+            .clone();
 
-        // Update existing document
         let mut update_doc = mongodb::bson::doc! { "updated_at": now.timestamp_millis() as i64 };
 
         if let Some(title) = request.title.clone() {
@@ -125,16 +98,18 @@ pub async fn update_about(
         }
 
         let update = doc! { "$set": update_doc };
-
-        collection.update_one(doc! { "_id": object_id }, update).await
+        collection.update_one(doc! { "_id": id_value.clone() }, update).await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         let response = AboutResponse {
-            id: object_id.to_hex(),
-            title: request.title.clone(),
-            content: request.content.clone().unwrap_or_else(|| {
-                doc.get_str("content").unwrap_or("").to_string()
-            }),
+            id: match id_value {
+                Bson::ObjectId(oid) => oid.to_hex(),
+                Bson::String(s) => s,
+                _ => "default".to_string(),
+            },
+            title: request.title.clone().or_else(|| doc.get_str("title").ok().map(|s| s.to_string())),
+            content: request.content.clone().or_else(|| doc.get_str("content").ok().map(|s| s.to_string()))
+                .unwrap_or_else(|| "Welcome to my personal website.".to_string()),
             updated_at: now,
         };
 
