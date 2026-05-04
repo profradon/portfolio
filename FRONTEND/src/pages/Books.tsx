@@ -23,11 +23,13 @@ export default function Books() {
         <h1 className="mt-3 font-grotesk text-5xl font-bold">Books I recommend</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">A growing pile of titles that shaped how I think.</p>
       </header>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {items.length === 0 && <p className="text-muted-foreground">No books yet.</p>}
-        {items.map((b) => (
-          <article key={b.id} className="rounded-lg border border-border bg-card p-5 card-shadow">
-            <div className="flex gap-4">
+        {items.map((b) => {
+          const notes = b.review || b.description || "";
+          return (
+            <article key={b.id} className="rounded-lg border border-border bg-card p-5 card-shadow">
+              <div className="flex gap-4">
               {b.cover_url ? (
                 <img src={b.cover_url} alt={b.title} className="h-28 w-20 shrink-0 rounded object-cover" loading="lazy" />
               ) : (
@@ -43,13 +45,13 @@ export default function Books() {
                 )}
               </div>
             </div>
-            {b.notes && (() => {
+            {notes && (() => {
               const isExpanded = expandedNotes[b.id];
-              const shouldTruncate = b.notes.length > 160;
+              const shouldTruncate = notes.length > 160;
               return (
                 <>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    {shouldTruncate && !isExpanded ? `${b.notes.slice(0, 160).trim()}...` : b.notes}
+                    {shouldTruncate && !isExpanded ? `${notes.slice(0, 160).trim()}...` : notes}
                   </p>
                   {shouldTruncate && (
                     <button
@@ -63,6 +65,16 @@ export default function Books() {
                 </>
               );
             })()}
+            {b.isbn && (
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(b.isbn)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                Find by ISBN →
+              </a>
+            )}
           </article>
         ))}
       </div>

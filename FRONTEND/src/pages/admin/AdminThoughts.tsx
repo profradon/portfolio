@@ -3,7 +3,7 @@ import { api } from "@/integrations/client";
 import { RichEditor } from "@/components/RichEditor";
 import { RichText } from "@/components/RichText";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import type { Thought } from "@/integrations/types";

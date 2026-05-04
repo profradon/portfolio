@@ -35,9 +35,12 @@ export interface Book {
   id: string;
   title: string;
   author: string;
-  notes: string;
+  description?: string;
+  isbn?: string;
   cover_url?: string;
-  link?: string;
+  rating?: number;
+  review?: string;
+  tags?: string[];
   created_at: string;
   updated_at: string;
 }

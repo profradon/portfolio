@@ -197,12 +197,13 @@ export default function Projects() {
       </div>
 
       {/* Results */}
-      <div className="grid gap-6 sm:grid-cols-2 auto-rows-fr">
+      <div className="grid gap-6 sm:grid-cols-2">
         {filtered.length === 0 && <p className="text-muted-foreground">No projects found.</p>}
         {filtered.map((p) => (
           <article
             key={p.id}
-            className="group rounded-lg border border-border bg-card p-6 card-shadow transition-all hover:-translate-y-1 hover:border-primary/40"            style={{ minHeight: 'auto' }}          >
+            className="group rounded-lg border border-border bg-card p-6 card-shadow transition-all hover:-translate-y-1 hover:border-primary/40"
+          >
             {p.image_url && (
               <img
                 src={p.image_url}
