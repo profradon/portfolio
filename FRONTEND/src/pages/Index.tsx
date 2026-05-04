@@ -105,12 +105,12 @@ I build, write, and think out loud. </>`;
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            "Rust", "TypeScript", "React", "Node.js",
+            "Rust", "C++", "TypeScript", "React", "Node.js",
             "Axum", "Tokio", "Express", "Next.js",
             "MongoDB", "PostgreSQL", "SQLx", "Sled DB",
             "Docker", "AWS", "Google Cloud", "TLS",
-             "REST API", "Tailwind CSS", "Material UI",
-            "C++", "Python", "Webpack", "Git",
+             "REST API", "Tailwind CSS", 
+             "Python", "Git",
             "Async I/O", "TCP/IP", "DashMap", "Cryptography",
             "Actix-web", "JavaScript", "MySQL"
           ].map((tech) => (

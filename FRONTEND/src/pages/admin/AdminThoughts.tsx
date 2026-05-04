@@ -70,7 +70,10 @@ export default function AdminThoughts() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader><DialogTitle>{editing ? "Edit thought" : "New thought"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit thought" : "New thought"}</DialogTitle>
+            <DialogDescription>Save a short thought for the public thoughts stream.</DialogDescription>
+          </DialogHeader>
           <RichEditor value={content} onChange={setContent} placeholder="What's on your mind?" minHeight={200} />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>

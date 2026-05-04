@@ -9,6 +9,7 @@ pub struct Blog {
     pub title: String,
     pub excerpt: String,
     pub content: String,
+    #[serde(default)]
     pub tags: Vec<String>,
     pub published: bool,
     #[serde(with = "chrono::serde::ts_seconds")]
@@ -51,6 +52,7 @@ pub struct Book {
     pub cover_url: Option<String>,
     pub rating: Option<f32>,
     pub review: Option<String>,
+    #[serde(default)]
     pub tags: Vec<String>,
     #[serde(with = "chrono::serde::ts_seconds")]
     pub created_at: DateTime<Utc>,
@@ -64,6 +66,7 @@ pub struct Thought {
     pub id: Option<String>,
     pub title: Option<String>,
     pub content: String,
+    #[serde(default)]
     pub tags: Vec<String>,
     pub published: bool,
     #[serde(with = "chrono::serde::ts_seconds")]
@@ -142,6 +145,7 @@ pub struct BookResponse {
     pub cover_url: Option<String>,
     pub rating: Option<f32>,
     pub review: Option<String>,
+    #[serde(default)]
     pub tags: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -152,6 +156,7 @@ pub struct ThoughtResponse {
     pub id: String,
     pub title: Option<String>,
     pub content: String,
+    #[serde(default)]
     pub tags: Vec<String>,
     pub published: bool,
     pub created_at: DateTime<Utc>,
@@ -173,6 +178,7 @@ pub struct CreateBlogRequest {
     pub title: String,
     pub excerpt: String,
     pub content: String,
+    #[serde(default)]
     pub tags: Vec<String>,
     pub published: bool,
 }
@@ -248,6 +254,7 @@ pub struct UpdateBookRequest {
 pub struct CreateThoughtRequest {
     pub title: Option<String>,
     pub content: String,
+    #[serde(default)]
     pub tags: Vec<String>,
     pub published: bool,
 }

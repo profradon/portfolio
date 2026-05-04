@@ -5,6 +5,12 @@ import type { Book } from "@/integrations/types";
 
 export default function Books() {
   const [items, setItems] = useState<Book[]>([]);
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+
+  const toggleNotes = (id: string) => {
+    setExpandedNotes((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   useEffect(() => {
     document.title = "Books — Prof Radon";
     api.get<Book[]>("/api/books").then(({ data }) => setItems(data || []));
@@ -37,7 +43,26 @@ export default function Books() {
                 )}
               </div>
             </div>
-            {b.notes && <p className="mt-3 text-sm text-muted-foreground">{b.notes}</p>}
+            {b.notes && (() => {
+              const isExpanded = expandedNotes[b.id];
+              const shouldTruncate = b.notes.length > 160;
+              return (
+                <>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {shouldTruncate && !isExpanded ? `${b.notes.slice(0, 160).trim()}...` : b.notes}
+                  </p>
+                  {shouldTruncate && (
+                    <button
+                      type="button"
+                      onClick={() => toggleNotes(b.id)}
+                      className="mt-2 text-sm text-primary hover:underline"
+                    >
+                      {isExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                </>
+              );
+            })()}
           </article>
         ))}
       </div>

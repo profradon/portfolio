@@ -7,6 +7,7 @@ export interface Blog {
   excerpt: string;
   content: string;
   cover_url?: string;
+  tags?: string[];
   published: boolean;
   created_at: string;
   updated_at: string;

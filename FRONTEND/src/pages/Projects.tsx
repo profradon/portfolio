@@ -44,6 +44,11 @@ export default function Projects() {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
+
+  const toggleProject = (id: string) => {
+    setExpandedProjects((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     document.title = "Projects — Prof Radon";
@@ -219,7 +224,30 @@ export default function Projects() {
                 </a>
               )}
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{p.description}</p>
+            {(() => {
+              const projectDescription = p.long_description || p.description;
+              const isExpanded = expandedProjects[p.id];
+              const shouldTruncate = projectDescription.length > 180;
+
+              return (
+                <>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {shouldTruncate && !isExpanded
+                      ? `${projectDescription.slice(0, 180).trim()}...`
+                      : projectDescription}
+                  </p>
+                  {shouldTruncate && (
+                    <button
+                      type="button"
+                      onClick={() => toggleProject(p.id)}
+                      className="mt-2 text-sm text-primary hover:underline"
+                    >
+                      {isExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                </>
+              );
+            })()}
 
             {(p.project_types?.length > 0 || p.languages?.length > 0) && (
               <div className="mt-3 space-y-2 text-xs">
