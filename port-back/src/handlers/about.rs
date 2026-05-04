@@ -101,7 +101,7 @@ pub async fn update_about(
     State(db): State<Database>,
     Json(request): Json<UpdateAboutRequest>,
 ) -> Result<Json<AboutResponse>, StatusCode> {
-    let collection = db.collection::<About>("about");
+    let collection = db.collection::<bson::Document>("about");
 
     // Try to find existing about document
     let existing_doc = collection.find_one(doc! {}).await
@@ -148,7 +148,8 @@ pub async fn update_about(
             updated_at: now,
         };
 
-        let result = collection.insert_one(&about).await
+        let collection_typed = db.collection::<About>("about");
+        let result = collection_typed.insert_one(&about).await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         let id = result.inserted_id.as_object_id().unwrap().to_hex();

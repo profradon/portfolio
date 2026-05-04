@@ -65,25 +65,26 @@ export default function Projects() {
       result = result.filter(
         (p) =>
           p.title.toLowerCase().includes(search.toLowerCase()) ||
-          p.description.toLowerCase().includes(search.toLowerCase())
+          p.description.toLowerCase().includes(search.toLowerCase()) ||
+          (p.long_description && p.long_description.toLowerCase().includes(search.toLowerCase()))
       );
     }
 
     if (selectedTypes.length > 0) {
       result = result.filter((p) =>
-        p.project_types?.some((t) => selectedTypes.includes(t))
+        p.project_types && p.project_types.some((t) => selectedTypes.includes(t))
       );
     }
 
     if (selectedLanguages.length > 0) {
       result = result.filter((p) =>
-        p.languages?.some((l) => selectedLanguages.includes(l))
+        p.languages && p.languages.some((l) => selectedLanguages.includes(l))
       );
     }
 
     if (selectedFrameworks.length > 0) {
       result = result.filter((p) =>
-        selectedFrameworks.some((f) => p.technologies?.includes(f))
+        p.technologies && p.technologies.some((f) => selectedFrameworks.includes(f))
       );
     }
 
@@ -201,8 +202,7 @@ export default function Projects() {
         {filtered.map((p) => (
           <article
             key={p.id}
-            className="group rounded-lg border border-border bg-card p-6 card-shadow transition-all hover:-translate-y-1 hover:border-primary/40"
-          >
+            className="group rounded-lg border border-border bg-card p-6 card-shadow transition-all hover:-translate-y-1 hover:border-primary/40"            style={{ minHeight: 'auto' }}          >
             {p.image_url && (
               <img
                 src={p.image_url}
