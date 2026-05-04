@@ -131,14 +131,18 @@ export default function Projects() {
   };
 
   return (
-    <div className="container py-8 sm:py-16">
-      <header className="mb-8 sm:mb-12">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">// projects</p>
-        <h1 className="mt-3 font-grotesk text-3xl sm:text-4xl md:text-5xl font-bold">Things I've built</h1>
+    <div className="container py-6 sm:py-10 lg:py-16">
+      <header className="mb-6 sm:mb-10 lg:mb-12">
+        <p className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.25em] text-primary">
+          // projects
+        </p>
+        <h1 className="mt-2 sm:mt-3 font-grotesk text-2xl sm:text-4xl md:text-5xl font-bold">
+          Things I've built
+        </h1>
       </header>
 
       {/* Filters */}
-      <div className="mb-8 space-y-4">
+      <div className="mb-6 sm:mb-8 space-y-4">
         <Input
           placeholder="Search projects..."
           value={search}
@@ -148,7 +152,9 @@ export default function Projects() {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-2">Project Type</label>
+            <label className="block text-sm font-medium mb-2">
+              Project Type {selectedTypes.length > 0 && <span className="text-primary">({selectedTypes.length})</span>}
+            </label>
             <div className="flex flex-wrap gap-2">
               {PROJECT_TYPES.map((type) => (
                 <Button
@@ -165,7 +171,9 @@ export default function Projects() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Language</label>
+            <label className="block text-sm font-medium mb-2">
+              Language {selectedLanguages.length > 0 && <span className="text-primary">({selectedLanguages.length})</span>}
+            </label>
             <div className="flex flex-wrap gap-2">
               {LANGUAGES.map((lang) => (
                 <Button
@@ -182,7 +190,9 @@ export default function Projects() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Framework</label>
+            <label className="block text-sm font-medium mb-2">
+              Framework {selectedFrameworks.length > 0 && <span className="text-primary">({selectedFrameworks.length})</span>}
+            </label>
             <div className="flex flex-wrap gap-2">
               {FRAMEWORKS.map((fw) => (
                 <Button
@@ -200,17 +210,25 @@ export default function Projects() {
         </div>
 
         {(search || selectedTypes.length > 0 || selectedLanguages.length > 0 || selectedFrameworks.length > 0) && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>Clear all</Button>
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            Clear all
+          </Button>
         )}
       </div>
 
       {/* Results */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-max">
-        {filtered.length === 0 && <p className="text-muted-foreground">No projects found.</p>}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+        {filtered.length === 0 && (
+          <p className="text-muted-foreground col-span-full">No projects found.</p>
+        )}
+
         {filtered.map((p) => (
           <article
+            id={p.id}
             key={p.id}
-            className="group rounded-lg border border-border bg-card p-6 card-shadow transition-all hover:-translate-y-1 hover:border-primary/40"
+            className={`group rounded-lg border border-border bg-card p-5 sm:p-6 card-shadow transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 flex flex-col h-full ${
+              expandedProjects[p.id] ? "sm:col-span-2 lg:col-span-3 w-full" : ""
+            }`}
           >
             {p.image_url && (
               <img
@@ -220,19 +238,24 @@ export default function Projects() {
                 loading="lazy"
               />
             )}
+
             <div className="flex items-start justify-between gap-3">
-              <h2 className="font-grotesk text-xl sm:text-2xl font-semibold">{p.title}</h2>
+              <h2 className="font-grotesk text-lg sm:text-2xl font-semibold break-words">
+                {p.title}
+              </h2>
+
               {p.live_url && (
                 <a
                   href={p.live_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-muted-foreground transition-colors hover:text-primary"
+                  className="text-muted-foreground transition-colors hover:text-primary shrink-0"
                 >
                   <ArrowUpRight className="h-5 w-5" />
                 </a>
               )}
             </div>
+
             {(() => {
               const projectDescription = p.long_description || p.description;
               const isExpanded = expandedProjects[p.id];
@@ -242,16 +265,17 @@ export default function Projects() {
               return (
                 <>
                   {isExpanded && p.long_description ? (
-                    <div className="mt-2 text-sm text-muted-foreground prose-sm">
-                      <RichText html={p.long_description} className="tiptap-content" />
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      <RichText html={p.long_description} className="tiptap-content text-sm" />
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="mt-2 text-sm text-muted-foreground break-words">
                       {shouldTruncate && !isExpanded
                         ? `${plainText.slice(0, 180).trim()}...`
                         : plainText}
                     </p>
                   )}
+
                   {shouldTruncate && (
                     <button
                       type="button"
@@ -269,12 +293,14 @@ export default function Projects() {
               <div className="mt-3 space-y-2 text-xs">
                 {p.project_types?.length > 0 && (
                   <div>
-                    <span className="font-semibold text-muted-foreground">Type:</span> {p.project_types.join(", ")}
+                    <span className="font-semibold text-muted-foreground">Type:</span>{" "}
+                    {p.project_types.join(", ")}
                   </div>
                 )}
                 {p.languages?.length > 0 && (
                   <div>
-                    <span className="font-semibold text-muted-foreground">Languages:</span> {p.languages.join(", ")}
+                    <span className="font-semibold text-muted-foreground">Languages:</span>{" "}
+                    {p.languages.join(", ")}
                   </div>
                 )}
               </div>
