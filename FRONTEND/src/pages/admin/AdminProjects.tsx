@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/integrations/client";
+import { RichEditor } from "@/components/RichEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,7 +115,7 @@ export default function AdminProjects() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit project" : "New project"}</DialogTitle>
             <DialogDescription>
@@ -123,8 +124,13 @@ export default function AdminProjects() {
           </DialogHeader>
           <div className="space-y-4">
             <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-            <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <div><Label>Long Description</Label><Textarea rows={3} value={form.long_description} onChange={(e) => setForm({ ...form, long_description: e.target.value })} /></div>
+            <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            <div>
+              <Label>Long Description</Label>
+              <div className="mt-1.5">
+                <RichEditor value={form.long_description} onChange={(html) => setForm({ ...form, long_description: html })} placeholder="Add a detailed project description with formatting…" minHeight={350} />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>GitHub URL</Label><Input placeholder="https://…" value={form.github_url} onChange={(e) => setForm({ ...form, github_url: e.target.value })} /></div>
               <div><Label>Live URL</Label><Input placeholder="https://…" value={form.live_url} onChange={(e) => setForm({ ...form, live_url: e.target.value })} /></div>
