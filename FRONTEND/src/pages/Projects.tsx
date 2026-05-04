@@ -197,7 +197,7 @@ export default function Projects() {
       </div>
 
       {/* Results */}
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2 auto-rows-fr">
         {filtered.length === 0 && <p className="text-muted-foreground">No projects found.</p>}
         {filtered.map((p) => (
           <article

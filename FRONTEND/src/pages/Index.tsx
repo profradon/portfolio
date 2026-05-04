@@ -139,7 +139,7 @@ I build, write, and think out loud. </>`;
           <h2 className="font-grotesk text-2xl sm:text-3xl md:text-4xl font-bold">Selected work</h2>
           <Link to="/projects" className="text-xs sm:text-sm text-primary hover:underline">All projects →</Link>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
           {projects.length === 0 && <p className="text-muted-foreground">No projects yet — add some from the admin panel.</p>}
           {projects.map((p) => (
             <article key={p.id} className="group rounded-lg border border-border bg-card overflow-hidden card-shadow transition-all hover:-translate-y-1 hover:border-primary/40">

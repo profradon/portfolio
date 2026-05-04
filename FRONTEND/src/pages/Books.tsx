@@ -23,7 +23,7 @@ export default function Books() {
         <h1 className="mt-3 font-grotesk text-5xl font-bold">Books I recommend</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">A growing pile of titles that shaped how I think.</p>
       </header>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
         {items.length === 0 && <p className="text-muted-foreground">No books yet.</p>}
         {items.map((b) => (
           <article key={b.id} className="rounded-lg border border-border bg-card p-5 card-shadow">
