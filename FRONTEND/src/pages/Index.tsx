@@ -105,14 +105,9 @@ I build, write, and think out loud. </>`;
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            "Rust", "C++", "TypeScript", "React", "Node.js",
-            "Axum", "Tokio", "Express", "Next.js",
-            "MongoDB", "PostgreSQL", "SQLx", "Sled DB",
-            "Docker", "AWS", "Google Cloud", "TLS",
-             "REST API", "Tailwind CSS", 
-             "Python", "Git",
-            "Async I/O", "TCP/IP", "DashMap", "Cryptography",
-            "Actix-web", "JavaScript", "MySQL"
+            "Rust", "C++", 
+            "Axum", "Tokio",
+            "TLS","Git", "TCP/IP", "Cryptography",
           ].map((tech) => (
             <div key={tech} className="rounded-lg border border-border bg-card p-3 sm:p-4 card-shadow transition-all hover:border-primary/40 hover:-translate-y-0.5">
               <p className="font-mono text-xs sm:text-sm font-semibold text-foreground">{tech}</p>

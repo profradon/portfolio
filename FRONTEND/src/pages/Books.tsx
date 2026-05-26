@@ -19,33 +19,90 @@ export default function Books() {
   return (
     <div className="container py-16">
       <header className="mb-12">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">// reading list</p>
-        <h1 className="mt-3 font-grotesk text-5xl font-bold">Books I recommend</h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">A growing pile of titles that shaped how I think.</p>
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">
+          // reading list
+        </p>
+        <h1 className="mt-3 font-grotesk text-5xl font-bold">
+          Books I recommend
+        </h1>
+        <p className="mt-3 max-w-2xl text-muted-foreground">
+          A growing pile of titles that shaped how I think.
+        </p>
       </header>
+
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {items.length === 0 && <p className="text-muted-foreground">No books yet.</p>}
-        {items.map((b) => (
-          <article key={b.id} className="rounded-lg border border-border bg-card p-5 card-shadow">
+        {items.length === 0 && (
+          <p className="text-muted-foreground">No books yet.</p>
+        )}
+
+        {items.map((b) => {
+          const text = b.review || b.description || "";
+          const isExpanded = expandedNotes[b.id];
+          const shouldShowToggle = text && text.length > 0;
+
+          return (
+            <article
+              key={b.id}
+              className="rounded-lg border border-border bg-card p-5 card-shadow flex flex-col h-full"
+            >
               <div className="flex gap-4">
-              {b.cover_url ? (
-                <img src={b.cover_url} alt={b.title} className="h-28 w-20 shrink-0 rounded object-cover" loading="lazy" />
-              ) : (
-                <div className="flex h-28 w-20 shrink-0 items-center justify-center rounded bg-secondary font-serif text-base text-muted-foreground">No cover</div>
-              )}
-              <div className="min-w-0">
-                <h2 className="font-serif text-lg leading-tight">{b.title}</h2>
-                <p className="mt-1 text-xs text-muted-foreground">{b.author}</p>
-                {b.link && (
-                  <a href={b.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                    Find it <ExternalLink className="h-3 w-3" />
-                  </a>
+                {b.cover_url ? (
+                  <img
+                    src={b.cover_url}
+                    alt={b.title}
+                    className="h-28 w-20 shrink-0 rounded object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-28 w-20 shrink-0 items-center justify-center rounded bg-secondary font-serif text-base text-muted-foreground">
+                    No cover
+                  </div>
                 )}
+
+                <div className="min-w-0">
+                  <h2 className="font-serif text-lg leading-tight break-words">
+                    {b.title}
+                  </h2>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {b.author}
+                  </p>
+
+                  {b.link && (
+                    <a
+                      href={b.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      Find it <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
               </div>
-            </div>
-            {(b.review || b.description) && (
-              <p className="mt-3 text-sm text-muted-foreground">{b.review || b.description}</p>
-            )}
+
+              {/* DESCRIPTION */}
+              {text && (
+                <div className="mt-3">
+                  <p className="text-sm text-muted-foreground break-words">
+                    {isExpanded
+                      ? text
+                      : text.length > 180
+                      ? `${text.slice(0, 180).trim()}...`
+                      : text}
+                  </p>
+
+                  {shouldShowToggle && text.length > 180 && (
+                    <button
+                      onClick={() => toggleNotes(b.id)}
+                      className="mt-2 text-xs text-primary hover:underline"
+                    >
+                      {isExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                </div>
+              )}
+
               {b.isbn && (
                 <a
                   href={"https://www.google.com/search?q=" + b.isbn}
@@ -56,8 +113,9 @@ export default function Books() {
                   Find by ISBN →
                 </a>
               )}
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </div>
   );
