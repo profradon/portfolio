@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { api } from "@/integrations/client";
 import { ArrowRight, Github, Mail, Heart } from "lucide-react";
@@ -27,7 +27,7 @@ I build, write, and think out loud. </>`;
       const [p, b, t] = await Promise.all([
         api.get<Project[]>("/api/projects?limit=3"),
         api.get<Blog[]>("/api/blogs?limit=3"),
-        api.get<Thought[]>("/api/thoughts?limit=1").then(({ data }) => data?.[0] || null),
+        api.get<Thought[]>("/api/thoughts?limit=1").then(({ data }: { data?: Thought[] }) => data?.[0] || null),
       ]);
       if (p.data) setProjects(p.data);
       if (b.data) setBlogs(b.data);
@@ -105,10 +105,13 @@ I build, write, and think out loud. </>`;
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            "Rust", "C++", 
-            "Axum", "Tokio",
-            "TLS","Git", "TCP/IP", "Cryptography",
-          ].map((tech) => (
+            "Rust",
+            "Tokio",
+            "Axum",
+            "Cargo",
+            "Serde",
+            "Tonic",
+          ].map((tech: string) => (
             <div key={tech} className="rounded-lg border border-border bg-card p-3 sm:p-4 card-shadow transition-all hover:border-primary/40 hover:-translate-y-0.5">
               <p className="font-mono text-xs sm:text-sm font-semibold text-foreground">{tech}</p>
             </div>
@@ -149,7 +152,7 @@ I build, write, and think out loud. </>`;
                 <h3 className="font-grotesk text-xl font-semibold">{p.title}</h3>
                 <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{p.description}</p>
                 <div className="mt-4 flex flex-wrap gap-1.5">
-                  {p.technologies?.slice(0, 3).map((t) => (
+                  {p.technologies?.slice(0, 3).map((t: string) => (
                     <span key={t} className="rounded-full bg-secondary px-2 py-0.5 font-mono text-xs text-muted-foreground">{t}</span>
                   ))}
                 </div>
@@ -204,7 +207,7 @@ I build, write, and think out loud. </>`;
                 type="email"
                 placeholder="your@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 className="flex-1 sm:flex-initial"
               />
               <Button onClick={handleSubscribe} disabled={subscribing} className="glow-shadow">

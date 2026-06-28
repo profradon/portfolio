@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { api } from "@/integrations/client";
 import { RichEditor } from "@/components/RichEditor";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import type { Project } from "@/integrations/types";
 
 const PROJECT_TYPES = ["Web Development", "App Development", "System Development", "Networking", "Upwork", "Open Source", "Learning"];
-const LANGUAGES = ["JavaScript", "TypeScript", "Rust", "C", "C++", "Python", "Go", "Solidity"];
+const LANGUAGES = ["Rust", "C", "C++"];
 const FRAMEWORKS = ["React", "Express.js", "Next.js", "Slint", "Axum", "FastAPI", "Vue.js"];
 
 const empty = { title: "", description: "", long_description: "", live_url: "", github_url: "", image_url: "", technologies: "", project_types: "", languages: "", featured: false };
@@ -123,27 +123,27 @@ export default function AdminProjects() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-            <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            <div><Label>Title</Label><Input value={form.title} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, title: e.target.value })} /></div>
+            <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })} /></div>
             <div>
               <Label>Long Description</Label>
               <div className="mt-1.5">
-                <RichEditor value={form.long_description} onChange={(html) => setForm({ ...form, long_description: html })} placeholder="Add a detailed project description with formatting…" minHeight={350} />
+                <RichEditor value={form.long_description} onChange={(html: string) => setForm({ ...form, long_description: html })} placeholder="Add a detailed project description with formatting…" minHeight={350} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>GitHub URL</Label><Input placeholder="https://…" value={form.github_url} onChange={(e) => setForm({ ...form, github_url: e.target.value })} /></div>
-              <div><Label>Live URL</Label><Input placeholder="https://…" value={form.live_url} onChange={(e) => setForm({ ...form, live_url: e.target.value })} /></div>
+              <div><Label>GitHub URL</Label><Input placeholder="https://…" value={form.github_url} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, github_url: e.target.value })} /></div>
+              <div><Label>Live URL</Label><Input placeholder="https://…" value={form.live_url} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, live_url: e.target.value })} /></div>
             </div>
             <div>
               <Label>Image</Label>
               <div className="flex flex-col gap-2">
-                <Input placeholder="https://…" value={form.image_url} onChange={(e) => { setForm({ ...form, image_url: e.target.value }); setImagePreview(e.target.value); }} />
+                <Input placeholder="https://…" value={form.image_url} onChange={(e: ChangeEvent<HTMLInputElement>) => { setForm({ ...form, image_url: e.target.value }); setImagePreview(e.target.value); }} />
                 <input
                   type="file"
                   accept="image/*"
                   className="rounded border border-border bg-background px-3 py-2"
-                  onChange={(e) => {
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
                     const reader = new FileReader();
@@ -161,13 +161,13 @@ export default function AdminProjects() {
                 )}
               </div>
             </div>
-            <div><Label>Technologies</Label><Input placeholder="React, Express, TypeScript..." value={form.technologies} onChange={(e) => setForm({ ...form, technologies: e.target.value })} /></div>
+            <div><Label>Technologies</Label><Input placeholder="React, Express, TypeScript..." value={form.technologies} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, technologies: e.target.value })} /></div>
             <div>
               <Label>Project Types</Label>
               <select
                 multiple
                 value={form.project_types.split(",").map((value) => value.trim()).filter(Boolean)}
-                onChange={(e) => setForm({ ...form, project_types: Array.from(e.target.selectedOptions).map((option) => option.value).join(", ") })}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm({ ...form, project_types: Array.from(e.target.selectedOptions).map((option) => option.value).join(", ") })}
                 className="w-full rounded border border-border bg-background px-3 py-2"
                 size={Math.min(PROJECT_TYPES.length, 6)}
               >
@@ -182,7 +182,7 @@ export default function AdminProjects() {
               <select
                 multiple
                 value={form.languages.split(",").map((value) => value.trim()).filter(Boolean)}
-                onChange={(e) => setForm({ ...form, languages: Array.from(e.target.selectedOptions).map((option) => option.value).join(", ") })}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm({ ...form, languages: Array.from(e.target.selectedOptions).map((option) => option.value).join(", ") })}
                 className="w-full rounded border border-border bg-background px-3 py-2"
                 size={Math.min(LANGUAGES.length, 6)}
               >
@@ -193,7 +193,7 @@ export default function AdminProjects() {
               <p className="mt-1 text-xs text-muted-foreground">Hold Ctrl/Cmd to select multiple languages.</p>
             </div>
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="featured" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
+              <input type="checkbox" id="featured" checked={form.featured} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, featured: e.target.checked })} />
               <Label htmlFor="featured">Featured</Label>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { api } from "@/integrations/client";
 import { RichText } from "@/components/RichText";
 import { ArrowUpRight } from "lucide-react";
@@ -17,16 +17,7 @@ const PROJECT_TYPES = [
   "Learning",
 ];
 
-const LANGUAGES = [
-  "JavaScript",
-  "TypeScript",
-  "Rust",
-  "C",
-  "C++",
-  "Python",
-  "Go",
-  "Solidity",
-];
+const LANGUAGES = ["Rust", "C", "C++"];
 
 const FRAMEWORKS = [
   "React",
@@ -146,7 +137,7 @@ export default function Projects() {
         <Input
           placeholder="Search projects..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
           className="w-full"
         />
 

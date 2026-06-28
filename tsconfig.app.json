@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "types": ["vitest/globals"],
     "target": "ES2020",
     "useDefineForClassFields": true,
@@ -23,8 +24,8 @@
     "noFallthroughCasesInSwitch": false,
 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./FRONTEND/src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["FRONTEND/src"]
 }
